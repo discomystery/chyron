@@ -56,7 +56,8 @@
 </header>
 
 <main>
-  <aside class="add">
+  <aside class="add" id="addPanel">
+    <button id="closeAdd" class="icon sheet-close" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
     <h2>Add a graphic</h2>
     <button data-add="headline"><span class="thumb t-headline"><b>Council caps</b><b>rent hikes</b></span>Headline</button>
     <button data-add="label"><span class="thumb t-label"><b>Breaking</b></span>Label</button>
@@ -79,6 +80,16 @@
   </aside>
 
   <section class="stage" id="stageArea">
+    <!-- Phone only: rails in the space beside a tall video. -->
+    <div class="rail" id="addRail" aria-label="Add a graphic">
+      <button data-add="headline"><svg class="ic" aria-hidden="true"><use href="#i-headline"/></svg><span>Headline</span></button>
+      <button data-add="label"><svg class="ic" aria-hidden="true"><use href="#i-label"/></svg><span>Label</span></button>
+      <button data-add="lower"><svg class="ic" aria-hidden="true"><use href="#i-lower"/></svg><span>Name</span></button>
+      <button data-add="quote"><svg class="ic" aria-hidden="true"><use href="#i-quote"/></svg><span>Quote</span></button>
+      <button data-add="credit"><svg class="ic" aria-hidden="true"><use href="#i-credit"/></svg><span>Source</span></button>
+      <button data-add="text"><svg class="ic" aria-hidden="true"><use href="#i-text"/></svg><span>Text</span></button>
+      <button id="moreAdd"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>More</span></button>
+    </div>
     <div class="wrap" id="wrap">
       <canvas id="stage" width="1080" height="1920"></canvas>
       <div class="guide" id="guide" hidden></div>
@@ -87,6 +98,24 @@
         <svg class="ic" aria-hidden="true"><use href="#i-video"/></svg>
         <p id="emptyMsg">Drop a video here to start.</p>
         <button id="open2" class="primary">Add video</button>
+      </div>
+    </div>
+    <div class="rail" id="toolRail">
+      <div id="railNone">
+        <button data-proxy="still"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg><span>Frame</span></button>
+        <button data-proxy="brandBtn"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg><span>Brand</span></button>
+      </div>
+      <div id="railGraphic" hidden>
+        <button data-proxy="dup"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button>
+        <button data-proxy="front"><svg class="ic" aria-hidden="true"><use href="#i-front"/></svg><span>Front</span></button>
+        <button data-proxy="saveStyle"><svg class="ic" aria-hidden="true"><use href="#i-style"/></svg><span>Style</span></button>
+        <button data-proxy="del" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg><span>Delete</span></button>
+      </div>
+      <div id="railClip" hidden>
+        <button data-proxy="split"><svg class="ic" aria-hidden="true"><use href="#i-split"/></svg><span>Split</span></button>
+        <button data-proxy="earlier"><svg class="ic" aria-hidden="true"><use href="#i-earlier"/></svg><span>Earlier</span></button>
+        <button data-proxy="later"><svg class="ic" aria-hidden="true"><use href="#i-later"/></svg><span>Later</span></button>
+        <button data-proxy="delClip" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg><span>Remove</span></button>
       </div>
     </div>
   </section>
@@ -191,12 +220,6 @@
     </form>
   </aside>
 </main>
-
-<!-- Phone only: switches the panel under the timeline. -->
-<nav class="tabs" id="tabs">
-  <button data-tab="add" class="on"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>Add</button>
-  <button data-tab="edit"><svg class="ic" aria-hidden="true"><use href="#i-select"/></svg>Edit</button>
-</nav>
 
 <footer class="timeline">
   <div class="transport">

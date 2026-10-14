@@ -816,7 +816,8 @@ const guide = $('#guide');
 function fitStage() {
   const area = $('#stageArea');
   const pad = area.clientWidth < 700 ? 16 : 40;
-  const k = Math.min((area.clientWidth - pad) / canvas.width, (area.clientHeight - pad) / canvas.height);
+  const rails = [...area.querySelectorAll('.rail')].reduce((w, r) => w + r.offsetWidth, 0);
+  const k = Math.min((area.clientWidth - rails - pad) / canvas.width, (area.clientHeight - pad) / canvas.height);
   wrap.style.width = `${Math.max(80, canvas.width * k)}px`;
   wrap.style.height = `${Math.max(80, canvas.height * k)}px`;
 }
@@ -904,7 +905,7 @@ const clipProps = $('#clipProps');
 function select(id) {
   selectedId = id;
   selectedClipId = null;
-  if (id) showTab('edit');
+  if (id) showAddSheet(false);
   const o = selected();
   // Jump to a moment when the graphic is on screen so it can be seen and edited.
   if (o && (T < o.start || T > endOf(o))) setTime(o.start);
@@ -915,7 +916,6 @@ function select(id) {
 function selectClip(id) {
   selectedClipId = id;
   selectedId = null;
-  showTab('edit');
   fillInspector();
   markSelection();
 }
@@ -935,6 +935,7 @@ function fillInspector() {
     $('#earlier').disabled = i === 0;
     $('#later').disabled = i === state.clips.length - 1;
   }
+  syncRails();
   if (!o) return;
   $('#propTitle').textContent = PRESETS[o.type].name;
   $('#subLabel').textContent = o.kind === 'quote' ? 'Who said it' : 'Title or role';
@@ -1788,11 +1789,24 @@ addEventListener('pointerdown', (e) => {
   if (!e.target.closest('#more, #moreBtn')) toggleMore(false);
 });
 
-function showTab(tab) {
-  document.body.classList.toggle('tab-edit', tab === 'edit');
-  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+// The side rails repeat buttons from the panels; each one presses the button it names.
+document.querySelectorAll('[data-proxy]').forEach((b) => (b.onclick = () => $(`#${b.dataset.proxy}`).click()));
+function syncRails() {
+  $('#railNone').hidden = !!(selected() || selectedClip());
+  $('#railGraphic').hidden = !selected();
+  $('#railClip').hidden = !selectedClip();
+  document.querySelectorAll('[data-proxy]').forEach((b) => (b.disabled = $(`#${b.dataset.proxy}`).disabled));
 }
-document.querySelectorAll('#tabs button').forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
+
+// On a phone, the full Add panel (images, subtitles, saved styles, layouts) opens as a sheet.
+function showAddSheet(open) {
+  document.body.classList.toggle('sheet-add', open);
+}
+$('#moreAdd').onclick = () => showAddSheet(true);
+$('#closeAdd').onclick = () => showAddSheet(false);
+addEventListener('pointerdown', (e) => {
+  if (document.body.classList.contains('sheet-add') && !e.target.closest('#addPanel, #moreAdd, dialog')) showAddSheet(false);
+});
 
 /* ---------- installing as an app ---------- */
 
