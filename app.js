@@ -1749,18 +1749,27 @@ function tick(ts) {
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
+// Only Chrome and Edge offer their own install prompt; other browsers get instructions instead.
 let installPrompt = null;
+const runningAsApp = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+$('#install').hidden = runningAsApp || !location.protocol.startsWith('http');
 addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   installPrompt = e;
-  $('#install').hidden = false;
 });
+function installSteps() {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'To install, tap the Share button, then Add to Home Screen.';
+  if (/Firefox/.test(ua)) return 'Firefox can’t install web apps. Open this page in Chrome, Edge or Safari to install Chyron.';
+  if (/Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua)) return 'To install, choose File → Add to Dock in Safari’s menu bar.';
+  return 'To install, click the install icon at the right end of the address bar, or open the browser menu and choose Install Chyron.';
+}
 $('#install').onclick = async () => {
-  if (!installPrompt) return;
+  if (!installPrompt) return toast(installSteps());
   installPrompt.prompt();
-  await installPrompt.userChoice;
+  const { outcome } = await installPrompt.userChoice;
   installPrompt = null;
-  $('#install').hidden = true;
+  if (outcome === 'accepted') $('#install').hidden = true;
 };
 addEventListener('appinstalled', () => {
   $('#install').hidden = true;
