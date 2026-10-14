@@ -951,6 +951,7 @@ function fillInspector() {
     const k = el.dataset.k, v = k === 'end' ? endOf(o) : subs && k === 'text' ? (cue ? cue.text : '') : o[k];
     if (v == null) return; // a setting this kind of graphic does not have
     if (el.type === 'checkbox') el.checked = v;
+    else if (el.dataset.scale) el.value = Math.round(v * el.dataset.scale);
     else el.value = el.type === 'number' ? +v.toFixed(2) : v;
   });
   $('#align').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === o.align));
@@ -964,7 +965,14 @@ props.addEventListener('input', (e) => {
   else if (el.type === 'number') {
     const v = parseFloat(el.value);
     if (Number.isNaN(v)) return;
-    if (k === 'start') o.start = clamp(v, 0, endOf(o) - 0.1);
+    if (el.dataset.scale) {
+      // Wait for a value in range, so typing "4" on the way to "48" doesn't shrink the graphic.
+      if (v < +el.min || v > +el.max) return;
+      o[k] = v / el.dataset.scale;
+    } else if (k === 'size') {
+      if (v < +el.min || v > +el.max) return;
+      o.size = v;
+    } else if (k === 'start') o.start = clamp(v, 0, endOf(o) - 0.1);
     else if (k === 'end') setEnd(o, v);
     else o[k] = v;
   } else if (o.cues && k === 'text') {
@@ -975,6 +983,27 @@ props.addEventListener('input', (e) => {
   if (k === 'kind') fillInspector();
   save();
 });
+
+// Out-of-range numbers are pulled into range once the field is left.
+props.addEventListener('change', (e) => {
+  const el = e.target;
+  if (el.type !== 'number' || !el.min || !el.max || !el.value) return;
+  const v = clamp(parseFloat(el.value), +el.min, +el.max);
+  if (v !== parseFloat(el.value)) {
+    el.value = v;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+});
+// The − and + buttons beside number fields.
+props.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-step]');
+  if (!btn) return;
+  const input = btn.parentElement.querySelector('input');
+  input.value = clamp((parseFloat(input.value) || 0) + +btn.dataset.step, +input.min, +input.max);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+});
+// Timing is mostly done with the timeline handles on a phone, so it starts folded away there.
+$('#timing').open = !matchMedia('(max-width: 900px)').matches;
 
 $('#align').addEventListener('click', (e) => {
   const o = selected();

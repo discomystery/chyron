@@ -256,12 +256,47 @@ textarea:disabled { background: transparent; }
 .seg button:first-child { border-radius: 6px 0 0 6px; margin-left: 0; }
 .seg button:last-child { border-radius: 0 6px 6px 0; }
 .seg button[aria-pressed="true"] { position: relative; background: var(--signal); border-color: var(--signal); color: #fff; }
-.looks { display: flex; gap: 6px; margin: 6px 0 9px; }
-.looks button { flex: 1; padding: 6px 0; font-weight: 800; border-color: #46527a; }
+/* Color presets as small chips, then one round swatch per color with its name beside it. */
+.looks { display: flex; gap: 6px; margin: 6px 0 8px; }
+.looks button { width: 38px; height: 28px; padding: 0; font-size: 12px; font-weight: 800; border-color: #46527a; }
 .looks button:hover { transform: translateY(-1px); border-color: #fff; }
-.colors, .times { display: flex; gap: 10px; }
-.colors label, .times label { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
-.colors input { width: 100%; height: 32px; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: #0f1525; cursor: pointer; }
+.colors { display: flex; flex-wrap: wrap; gap: 6px; }
+.colors label {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 3px;
+  background: #0f1525;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+.colors label:hover { border-color: #46527a; }
+.colors input { width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; -webkit-appearance: none; appearance: none; }
+.colors input::-webkit-color-swatch-wrapper { padding: 0; }
+.colors input::-webkit-color-swatch { border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 50%; }
+.colors input::-moz-color-swatch { border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 50%; }
+.times { display: flex; gap: 10px; }
+.times label { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+
+/* Number fields with − and + either side. */
+.num { display: flex; margin-top: 5px; }
+.num > button { width: 36px; padding: 0; font-size: 17px; line-height: 1; }
+.num > button:first-child { border-radius: 6px 0 0 6px; }
+.num > button:last-child { border-radius: 0 6px 6px 0; }
+.num-box { display: flex; flex: 1; min-width: 0; align-items: center; background: #0f1525; border: 1px solid var(--line); border-width: 1px 0; color: var(--muted); }
+.num-box input { flex: 1; width: 0; min-width: 0; padding: 7px 0 7px 10px; background: none; border: 0; border-radius: 0; text-align: center; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.num-box input::-webkit-inner-spin-button, .num-box input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.num-box i { width: 22px; font-style: normal; font-size: 13px; }
+.num-box:has(> i) input { padding-left: 22px; }
+.num-box:focus-within { outline: 2px solid var(--flash); outline-offset: -1px; }
+.num-box input:focus-visible { outline: none; }
+
+/* Timing & animation: always open on a computer, folded away on a phone. */
+.group > summary { display: none; }
 .times input, .times select { width: 100%; }
 button.wide, select.wide { display: flex; width: 100%; margin-top: 8px; }
 select.wide { display: block; }
@@ -513,13 +548,20 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   .inspector .f > textarea, .inspector .f > input, .inspector .f > select { margin-top: 3px; }
   .inspector textarea { height: 3.4em; resize: none; }
   [data-k="text"], [data-k="sub"], [data-k="offset"] { min-width: 0; }
-  .inspector .f:has(> textarea), .inspector .f:has(.colors), .inspector .f:has(.times), #replaceImage { grid-column: 1 / -1; }
+  .inspector .f:has(> textarea), .inspector .f:has(.colors), #replaceImage { grid-column: 1 / -1; }
   .inspector .check { min-height: 38px; }
   .inspector .seg { margin-top: 3px; }
   .inspector .seg button { padding: 6px; }
-  .looks { margin: 3px 0 6px; }
-  .looks button { padding: 4px 0; }
-  .colors input { height: 28px; }
+  .looks { margin: 4px 0 6px; }
+  .num { margin-top: 3px; }
+  .num > button { width: 38px; }
+  .num-box input { padding: 6px 0 6px 8px; }
+  .group { grid-column: 1 / -1; border-top: 1px solid var(--line); }
+  .group > summary { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 4px; font-size: 13px; font-weight: 600; color: var(--muted); list-style: none; cursor: pointer; }
+  .group > summary::-webkit-details-marker { display: none; }
+  .group > summary::after { content: "+"; font-size: 18px; line-height: 1; }
+  .group[open] > summary::after { content: "−"; }
+  .group > .f { margin-top: 8px; }
   .inspector .times { gap: 8px; }
   #whole { margin-top: 6px; padding: 5px; font-size: 12px; }
   .inspector select.wide { margin-top: 6px; }

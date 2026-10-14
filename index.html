@@ -138,8 +138,12 @@
         <small>Use a negative number if the subtitles appear late.</small></label>
       <button type="button" id="replaceImage" class="wide" data-for="image"><svg class="ic" aria-hidden="true"><use href="#i-swap"/></svg>Replace image</button>
       <label class="f" data-for="lines lower quote text">Typeface<select data-k="font"></select></label>
-      <label class="f" data-for="lines lower quote text">Text size<input data-k="size" type="range" min="18" max="220" step="1"></label>
-      <label class="f">Width<input data-k="width" type="range" min="0.05" max="1" step="0.01"></label>
+      <div class="f" data-for="lines lower quote text">Text size
+        <div class="num"><button type="button" data-step="-2" aria-label="Smaller">−</button><label class="num-box"><input data-k="size" min="18" max="220" step="1" type="number" inputmode="numeric" aria-label="Text size"></label><button type="button" data-step="2" aria-label="Bigger">+</button></div>
+      </div>
+      <div class="f">Width
+        <div class="num"><button type="button" data-step="-5" aria-label="Smaller">−</button><label class="num-box"><input data-k="width" data-scale="100" min="5" max="100" step="1" type="number" inputmode="numeric" aria-label="Width"><i>%</i></label><button type="button" data-step="5" aria-label="Bigger">+</button></div>
+      </div>
       <div class="f" data-for="lines lower quote text">Alignment
         <div class="seg" id="align">
           <button type="button" data-v="left" title="Left" aria-label="Align left"><svg class="ic" aria-hidden="true"><use href="#i-left"/></svg></button>
@@ -159,40 +163,43 @@
       <label class="f" data-for="lines lower quote">Box opacity<input data-k="bgAlpha" type="range" min="0" max="1" step="0.05"></label>
       <label class="f" data-for="image">Opacity<input data-k="alpha" type="range" min="0.05" max="1" step="0.05"></label>
       <label class="f" data-for="lines quote image">Rounded corners<input data-k="radius" type="range" min="0" max="1" step="0.05"></label>
-      <div class="f" data-subs="hide">On screen
-        <div class="times">
-          <label>From<input data-k="start" type="number" step="0.1" min="0"></label>
-          <label>To<input data-k="end" type="number" step="0.1" min="0"></label>
+      <details class="group" id="timing" data-subs="hide">
+        <summary>Timing &amp; animation</summary>
+        <div class="f" data-subs="hide">On screen
+          <div class="times">
+            <label>From<input data-k="start" type="number" step="0.1" min="0"></label>
+            <label>To<input data-k="end" type="number" step="0.1" min="0"></label>
+          </div>
+          <button type="button" id="whole" class="wide"><svg class="ic" aria-hidden="true"><use href="#i-whole"/></svg>Show for the whole video</button>
         </div>
-        <button type="button" id="whole" class="wide"><svg class="ic" aria-hidden="true"><use href="#i-whole"/></svg>Show for the whole video</button>
-      </div>
-      <div class="f" data-subs="hide">Animation
-        <div class="times">
-          <label>Entrance
-            <select data-k="anim">
-              <option value="none">None</option>
-              <option value="fade">Fade in</option>
-              <option value="rise">Rise up</option>
-              <option value="wipe">Wipe across</option>
-              <option value="slide">Slide in</option>
-            </select>
-          </label>
-          <label>Exit
-            <select data-k="out">
-              <option value="none">None</option>
-              <option value="fade">Fade out</option>
-              <option value="rise">Drop down</option>
-              <option value="wipe">Wipe away</option>
-              <option value="slide">Slide out</option>
-            </select>
-          </label>
+        <div class="f" data-subs="hide">Animation
+          <div class="times">
+            <label>Entrance
+              <select data-k="anim">
+                <option value="none">None</option>
+                <option value="fade">Fade in</option>
+                <option value="rise">Rise up</option>
+                <option value="wipe">Wipe across</option>
+                <option value="slide">Slide in</option>
+              </select>
+            </label>
+            <label>Exit
+              <select data-k="out">
+                <option value="none">None</option>
+                <option value="fade">Fade out</option>
+                <option value="rise">Drop down</option>
+                <option value="wipe">Wipe away</option>
+                <option value="slide">Slide out</option>
+              </select>
+            </label>
+          </div>
+          <select data-k="speed" data-num class="wide">
+            <option value="0.25">Quick</option>
+            <option value="0.45">Normal speed</option>
+            <option value="0.9">Slow</option>
+          </select>
         </div>
-        <select data-k="speed" data-num class="wide">
-          <option value="0.25">Quick</option>
-          <option value="0.45">Normal speed</option>
-          <option value="0.9">Slow</option>
-        </select>
-      </div>
+      </details>
       <div class="actions">
         <button type="button" id="dup"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg>Duplicate</button>
         <button type="button" id="front"><svg class="ic" aria-hidden="true"><use href="#i-front"/></svg>Bring to front</button>
