@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Chyron — news graphics for video</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,38 +17,42 @@
 
 <header class="bar">
   <h1><span>Chyron</span></h1>
-  <button id="open" class="lead"><svg class="ic" aria-hidden="true"><use href="#i-video"/></svg>Add video</button>
-  <details class="menu" id="projectMenu">
-    <summary><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg>Project<svg class="ic" aria-hidden="true"><use href="#i-caret"/></svg></summary>
-    <div>
-      <button id="newProject"><svg class="ic" aria-hidden="true"><use href="#i-new"/></svg>New project</button>
-      <button id="openProject"><svg class="ic" aria-hidden="true"><use href="#i-open"/></svg>Open project file</button>
-      <button id="saveProject"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg>Save project file</button>
-    </div>
-  </details>
-  <button id="brandBtn"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg>Brand kit</button>
+  <button id="open" class="lead" aria-label="Add video"><svg class="ic" aria-hidden="true"><use href="#i-video"/></svg><span class="lbl">Add video</span></button>
   <span class="pair">
     <button id="undo" class="icon" title="Undo" aria-label="Undo" disabled><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg></button>
     <button id="redo" class="icon" title="Redo" aria-label="Redo" disabled><svg class="ic" aria-hidden="true"><use href="#i-redo"/></svg></button>
   </span>
-  <label class="inline">Shape
-    <select id="format">
-      <option value="9:16">Vertical 9:16</option>
-      <option value="4:5">Portrait 4:5</option>
-      <option value="1:1">Square 1:1</option>
-      <option value="16:9">Wide 16:9</option>
-    </select>
-  </label>
-  <label class="inline">Video
-    <select id="fit">
-      <option value="cover">Fill the frame</option>
-      <option value="contain">Fit inside</option>
-    </select>
-  </label>
-  <span class="spacer"></span>
-  <button id="install" hidden><svg class="ic" aria-hidden="true"><use href="#i-install"/></svg>Install app</button>
-  <button id="still"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>Save frame as image</button>
-  <button id="export" class="primary"><svg class="ic" aria-hidden="true"><use href="#i-export"/></svg>Export video</button>
+  <!-- On a phone these fold into the More menu; on a computer they sit in the bar. -->
+  <div class="more" id="more">
+    <details class="menu" id="projectMenu">
+      <summary><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg>Project<svg class="ic" aria-hidden="true"><use href="#i-caret"/></svg></summary>
+      <div>
+        <button id="newProject"><svg class="ic" aria-hidden="true"><use href="#i-new"/></svg>New project</button>
+        <button id="openProject"><svg class="ic" aria-hidden="true"><use href="#i-open"/></svg>Open project file</button>
+        <button id="saveProject"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg>Save project file</button>
+      </div>
+    </details>
+    <button id="brandBtn"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg>Brand kit</button>
+    <label class="inline">Shape
+      <select id="format">
+        <option value="9:16">Vertical 9:16</option>
+        <option value="4:5">Portrait 4:5</option>
+        <option value="1:1">Square 1:1</option>
+        <option value="16:9">Wide 16:9</option>
+      </select>
+    </label>
+    <label class="inline">Video
+      <select id="fit">
+        <option value="cover">Fill the frame</option>
+        <option value="contain">Fit inside</option>
+      </select>
+    </label>
+    <span class="spacer"></span>
+    <button id="install" hidden><svg class="ic" aria-hidden="true"><use href="#i-install"/></svg>Install app</button>
+    <button id="still"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>Save frame as image</button>
+  </div>
+  <button id="moreBtn" class="icon" aria-label="More" aria-expanded="false" aria-controls="more"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg></button>
+  <button id="export" class="primary"><svg class="ic" aria-hidden="true"><use href="#i-export"/></svg>Export<span class="lbl"> video</span></button>
 </header>
 
 <main>
@@ -188,6 +192,12 @@
   </aside>
 </main>
 
+<!-- Phone only: switches the panel under the timeline. -->
+<nav class="tabs" id="tabs">
+  <button data-tab="add" class="on"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>Add</button>
+  <button data-tab="edit"><svg class="ic" aria-hidden="true"><use href="#i-select"/></svg>Edit</button>
+</nav>
+
 <footer class="timeline">
   <div class="transport">
     <button id="play" title="Play (Space)" aria-label="Play"></button>
@@ -249,6 +259,17 @@
     <div class="progress"><i id="progress"></i></div>
     <p id="exportTime" class="time"></p>
     <button id="cancel">Cancel export</button>
+  </div>
+</div>
+<div class="modal" id="done" hidden>
+  <div class="card">
+    <h2 id="doneTitle">Your video is ready</h2>
+    <p id="doneMsg">Choose Save Video in the share sheet to put it in Photos, or send it straight to an app.</p>
+    <div class="actions">
+      <button id="shareFile" class="primary"><svg class="ic" aria-hidden="true"><use href="#i-export"/></svg>Save or share</button>
+      <button id="downloadFile">Download file</button>
+      <button id="closeDone">Close</button>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>

@@ -6,6 +6,8 @@ Everything runs in your browser. Videos are never uploaded anywhere.
 
 **Use it:** https://discomystery.github.io/chyron/ (Chrome works best), or open `index.html` from a downloaded copy.
 
-**Install it:** on the site in Chrome or Edge, click **Install app** in the top bar (or the install icon in the address bar). It then opens in its own window and works offline.
+**Install it:** on the site, click **Install app** in the top bar (on a phone it's in the ⋮ menu). Chrome and Edge install it directly; Safari shows the steps (File → Add to Dock on a Mac, Share → Add to Home Screen on iPhone). It then opens in its own window and works offline.
+
+**On a phone:** the same site switches to a phone layout, with the video on top, the timeline under it, and Add and Edit tabs below. After export, **Save or share** opens the share sheet so the video can go straight to Photos.
 
 Video export uses [Mediabunny](https://mediabunny.dev) (MPL-2.0), included unmodified in `vendor/`. Icons are from [Phosphor](https://phosphoricons.com) (MIT).

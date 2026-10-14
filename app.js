@@ -213,6 +213,10 @@ async function load() {
   commit();
 }
 
+// Trim handles are wider on touch screens, matching the handles drawn in style.css.
+const touch = matchMedia('(pointer: coarse)').matches;
+const GRIP = touch ? 18 : 10;
+
 function download(blob, name) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -413,7 +417,7 @@ function recalc() {
   }
   const missing = [...new Set(state.clips.map((c) => c.name))].filter((n) => !media.has(n));
   $('#empty').hidden = hasVideo;
-  $('#emptyMsg').textContent = missing.length ? `Add ${missing.join(', ')} again to pick up where you left off.` : 'Drop a video here to start.';
+  $('#emptyMsg').textContent = missing.length ? `Add ${missing.join(', ')} again to pick up where you left off.` : (touch ? 'Tap Add video to start.' : 'Drop a video here to start.');
 }
 
 function segIndexAt(t) {
@@ -811,7 +815,8 @@ const guide = $('#guide');
 
 function fitStage() {
   const area = $('#stageArea');
-  const k = Math.min((area.clientWidth - 40) / canvas.width, (area.clientHeight - 40) / canvas.height);
+  const pad = area.clientWidth < 700 ? 16 : 40;
+  const k = Math.min((area.clientWidth - pad) / canvas.width, (area.clientHeight - pad) / canvas.height);
   wrap.style.width = `${Math.max(80, canvas.width * k)}px`;
   wrap.style.height = `${Math.max(80, canvas.height * k)}px`;
 }
@@ -899,6 +904,7 @@ const clipProps = $('#clipProps');
 function select(id) {
   selectedId = id;
   selectedClipId = null;
+  if (id) showTab('edit');
   const o = selected();
   // Jump to a moment when the graphic is on screen so it can be seen and edited.
   if (o && (T < o.start || T > endOf(o))) setTime(o.start);
@@ -909,6 +915,7 @@ function select(id) {
 function selectClip(id) {
   selectedClipId = id;
   selectedId = null;
+  showTab('edit');
   fillInspector();
   markSelection();
 }
@@ -1340,7 +1347,7 @@ function renderTimeline() {
 function startBarDrag(e, o, clip, lane) {
   select(o.id);
   const px = e.clientX - clip.getBoundingClientRect().left;
-  const grip = Math.min(10, clip.offsetWidth / 3);
+  const grip = Math.min(GRIP, clip.offsetWidth / 3);
   const edge = px < grip ? 'start' : px > clip.offsetWidth - grip ? 'end' : 'move';
   const s0 = o.start, e0 = endOf(o), len = e0 - s0, w = lane.clientWidth;
   dragging(e, (dx) => {
@@ -1361,7 +1368,7 @@ function startTrim(e, s, el, lane) {
   const c = s.c;
   selectClip(c.id);
   const px = e.clientX - el.getBoundingClientRect().left;
-  const grip = Math.min(10, el.offsetWidth / 3);
+  const grip = Math.min(GRIP, el.offsetWidth / 3);
   const edge = px < grip ? 'in' : px > el.offsetWidth - grip ? 'out' : null;
   if (!edge) return;
   pause();
@@ -1636,9 +1643,28 @@ async function exportVideo() {
   if (problem) return toast(`Export stopped: ${problem.message}`);
   if (cancelled || !blob) return toast('Export cancelled.');
   const name = `${projectName()}-graphics.${blob.type === 'video/mp4' ? 'mp4' : 'webm'}`;
-  download(blob, name);
-  toast(`Video exported as ${name}`);
+  deliver(blob, name, `Video exported as ${name}`);
 }
+
+// On a phone, offer the share sheet so the file can go straight to Photos or another app.
+// Sharing needs a fresh tap, so it waits behind a button rather than running when export ends.
+function deliver(blob, name, msg) {
+  const file = new File([blob], name, { type: blob.type });
+  if (!touch || !navigator.canShare || !navigator.canShare({ files: [file] })) {
+    download(blob, name);
+    return toast(msg);
+  }
+  const image = blob.type.startsWith('image/');
+  $('#doneTitle').textContent = image ? 'Your image is ready' : 'Your video is ready';
+  $('#doneMsg').textContent = `Choose Save ${image ? 'Image' : 'Video'} in the share sheet to put it in Photos, or send it straight to an app.`;
+  $('#done').hidden = false;
+  $('#shareFile').onclick = () => navigator.share({ files: [file] }).then(() => ($('#done').hidden = true), () => {});
+  $('#downloadFile').onclick = () => {
+    download(blob, name);
+    $('#done').hidden = true;
+  };
+}
+$('#closeDone').onclick = () => ($('#done').hidden = true);
 
 $('#export').onclick = exportVideo;
 $('#cancel').onclick = () => {
@@ -1647,7 +1673,7 @@ $('#cancel').onclick = () => {
 };
 $('#still').onclick = () => {
   drawFrame(T, false, () => ctx.drawImage(bgCanvas, 0, 0));
-  canvas.toBlob((blob) => download(blob, `${projectName()}-frame.png`), 'image/png');
+  canvas.toBlob((blob) => deliver(blob, `${projectName()}-frame.png`, 'Frame saved as an image.'), 'image/png');
 };
 
 let toastTimer;
@@ -1742,6 +1768,31 @@ function tick(ts) {
   }
   requestAnimationFrame(tick);
 }
+
+/* ---------- phone layout ---------- */
+
+const more = $('#more');
+function toggleMore(open) {
+  more.classList.toggle('open', open);
+  $('#moreBtn').setAttribute('aria-expanded', open);
+}
+$('#moreBtn').onclick = (e) => {
+  e.stopPropagation();
+  toggleMore(!more.classList.contains('open'));
+};
+// Close the menu after picking something in it, or tapping anywhere else.
+more.addEventListener('click', (e) => {
+  if (e.target.closest('button:not(#install)')) toggleMore(false);
+});
+addEventListener('pointerdown', (e) => {
+  if (!e.target.closest('#more, #moreBtn')) toggleMore(false);
+});
+
+function showTab(tab) {
+  document.body.classList.toggle('tab-edit', tab === 'edit');
+  document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+}
+document.querySelectorAll('#tabs button').forEach((b) => (b.onclick = () => showTab(b.dataset.tab)));
 
 /* ---------- installing as an app ---------- */
 
