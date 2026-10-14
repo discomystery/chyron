@@ -1,0 +1,4 @@
+# Only needed for local testing previews
+serve.js
+.claude/
+.DS_Store
