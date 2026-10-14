@@ -1743,6 +1743,36 @@ function tick(ts) {
   requestAnimationFrame(tick);
 }
 
+/* ---------- installing as an app ---------- */
+
+// The service worker keeps the app working offline; browsers only allow it on a real web address.
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+let installPrompt = null;
+addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  $('#install').hidden = false;
+});
+$('#install').onclick = async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice;
+  installPrompt = null;
+  $('#install').hidden = true;
+};
+addEventListener('appinstalled', () => {
+  $('#install').hidden = true;
+  toast('Chyron is installed. Open it from your Applications folder or Dock.');
+});
+// Once installed, videos and SRT files can be opened with Chyron from Finder.
+if ('launchQueue' in window) {
+  launchQueue.setConsumer(async (params) => {
+    if (params.files && params.files.length) handleFiles(await Promise.all(params.files.map((h) => h.getFile())));
+  });
+}
+
 new ResizeObserver(fitStage).observe($('#stageArea'));
 FONTS.forEach((f) => document.fonts.load(`${f.weight} 40px "${f.name}"`));
 load().then(() => requestAnimationFrame(tick));

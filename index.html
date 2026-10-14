@@ -8,6 +8,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wdth,wght@62..125,400..800&family=Barlow+Condensed:wght@700&family=Newsreader:opsz,wght@6..72,600&family=Oswald:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#161c2d">
 </head>
 <body>
 
@@ -42,6 +46,7 @@
     </select>
   </label>
   <span class="spacer"></span>
+  <button id="install" hidden><svg class="ic" aria-hidden="true"><use href="#i-install"/></svg>Install app</button>
   <button id="still"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>Save frame as image</button>
   <button id="export" class="primary"><svg class="ic" aria-hidden="true"><use href="#i-export"/></svg>Export video</button>
 </header>
