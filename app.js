@@ -13,7 +13,7 @@ const FONTS = [
   { name: 'Barlow Condensed', weight: 700 },
   { name: 'Newsreader', weight: 600 },
 ];
-const DEFAULT_BRAND = { dark: '#111111', light: '#ffffff', main: '#1740e0', accent: '#ffd400', head: 'Anton', body: 'Archivo', logo: null };
+const DEFAULT_BRAND = { dark: '#111111', light: '#ffffff', main: '#1740e0', accent: '#ffd400', extra: '#e4262c', head: 'Anton', body: 'Archivo', logo: null };
 // Values starting with $ are filled in from the brand kit when a graphic is made.
 const BASE = {
   text: '', sub: '', width: 0.84, x: 0.08, y: 0.5, size: 56, align: 'left', upper: false, track: 0,
@@ -923,6 +923,7 @@ function selectClip(id) {
 function fillInspector() {
   const o = selected(), c = selectedClip();
   props.hidden = !o;
+  $('#editTabs').hidden = !o;
   clipProps.hidden = !c;
   $('#noSel').hidden = !!(o || c);
   if (c) {
@@ -955,6 +956,9 @@ function fillInspector() {
     else el.value = el.type === 'number' ? +v.toFixed(2) : v;
   });
   $('#align').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === o.align));
+  syncChips();
+  syncTabs();
+  syncColorTarget();
 }
 
 props.addEventListener('input', (e) => {
@@ -1002,9 +1006,6 @@ props.addEventListener('click', (e) => {
   input.value = clamp((parseFloat(input.value) || 0) + +btn.dataset.step, +input.min, +input.max);
   input.dispatchEvent(new Event('input', { bubbles: true }));
 });
-// Timing is mostly done with the timeline handles on a phone, so it starts folded away there.
-$('#timing').open = !matchMedia('(max-width: 900px)').matches;
-
 $('#align').addEventListener('click', (e) => {
   const o = selected();
   if (!o || !e.target.dataset.v) return;
@@ -1145,10 +1146,12 @@ function brandLooks() {
     { color: b.dark, bg: b.light, accent: b.main },
     { color: readable(b.main), bg: b.main, accent: b.accent },
     { color: readable(b.accent), bg: b.accent, accent: b.main },
+    { color: readable(b.extra), bg: b.extra, accent: b.light },
   ];
 }
 
 function renderLooks() {
+  renderBrandDots();
   $('#looks').replaceChildren(...brandLooks().map((look) => {
     const b = document.createElement('button');
     b.type = 'button';
@@ -1168,6 +1171,7 @@ function renderLooks() {
 function renderFontOptions() {
   const html = allFonts().map((f) => `<option>${f.name}</option>`).join('');
   document.querySelectorAll('[data-k="font"], [data-b="head"], [data-b="body"]').forEach((el) => (el.innerHTML = html));
+  buildChips(props.querySelector('[data-k="font"]'));
 }
 
 function libRow(label, actions) {
@@ -1798,6 +1802,125 @@ function tick(ts) {
   }
   requestAnimationFrame(tick);
 }
+
+/* ---------- phone editing panel ---------- */
+
+const phone = () => matchMedia('(max-width: 900px)').matches;
+const inspector = $('.inspector');
+
+// The tab strip shows one group of settings at a time; tabs with nothing to show for this graphic are hidden.
+function showEditTab(tab) {
+  inspector.dataset.tab = tab;
+  $('#editTabs').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+}
+function syncTabs() {
+  let first = null;
+  $('#editTabs').querySelectorAll('button').forEach((b) => {
+    const any = [...props.querySelectorAll(`[data-group="${b.dataset.tab}"]`)].some((el) => !el.closest('[hidden]'));
+    b.hidden = !any;
+    if (any && !first) first = b.dataset.tab;
+  });
+  const cur = $(`#editTabs [data-tab="${inspector.dataset.tab}"]`);
+  showEditTab(cur && !cur.hidden ? inspector.dataset.tab : first);
+}
+$('#editTabs').querySelectorAll('button').forEach((b) => (b.onclick = () => showEditTab(b.dataset.tab)));
+showEditTab('text');
+
+// On a phone, menus for typeface, animation and speed become rows of tappable chips.
+const SPEED_MARKS = ['»', '›', '·'];
+function buildChips(select) {
+  if (!select) return;
+  let row = select.nextElementSibling;
+  if (!row || !row.classList.contains('chips')) {
+    row = document.createElement('div');
+    row.className = 'chips';
+    select.after(row);
+  }
+  const kind = select.dataset.chips;
+  row.replaceChildren(...[...select.options].map((opt, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.v = opt.value;
+    b.title = opt.textContent;
+    b.setAttribute('aria-label', `${select.getAttribute('aria-label') || ''} ${opt.textContent}`.trim());
+    if (kind === 'font') {
+      b.textContent = opt.textContent;
+      b.style.fontFamily = `"${opt.textContent}"`;
+    } else if (kind === 'anim') {
+      const name = select.dataset.k === 'out' && opt.value === 'rise' ? 'a-drop' : `a-${opt.value}`;
+      b.append(iconEl(name));
+      b.className = 'icon';
+    } else b.textContent = SPEED_MARKS[i] || opt.textContent;
+    b.onclick = () => {
+      select.value = opt.value;
+      select.dispatchEvent(new Event('input', { bubbles: true }));
+      syncChips();
+    };
+    return b;
+  }));
+}
+function syncChips() {
+  props.querySelectorAll('.chips').forEach((row) => {
+    const v = row.previousElementSibling.value;
+    row.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === v));
+  });
+}
+props.querySelectorAll('[data-chips]').forEach(buildChips);
+
+// Colors on a phone: tap Text, Box or Highlight, then a brand color dot (or the rainbow dot for any color).
+let colorTarget = 'color';
+const colorInput = (k) => props.querySelector(`.colors [data-k="${k}"]`);
+props.querySelector('.colors').addEventListener('click', (e) => {
+  const label = e.target.closest('label');
+  if (!label || !phone()) return;
+  e.preventDefault();
+  colorTarget = label.querySelector('input').dataset.k;
+  syncColorTarget();
+});
+function syncColorTarget() {
+  if (colorInput(colorTarget).closest('[hidden]')) colorTarget = 'color';
+  props.querySelectorAll('.colors label').forEach((l) => l.classList.toggle('on', l.querySelector('input').dataset.k === colorTarget));
+  const o = selected(), now = o && String(o[colorTarget]).toLowerCase();
+  $('#brandDots').querySelectorAll('button[data-c]').forEach((b) => b.classList.toggle('on', b.dataset.c.toLowerCase() === now));
+}
+function renderBrandDots() {
+  const b = state.brand;
+  const dots = [b.dark, b.light, b.main, b.accent, b.extra].map((c) => {
+    const d = document.createElement('button');
+    d.type = 'button';
+    d.dataset.c = c;
+    d.style.background = c;
+    d.setAttribute('aria-label', `Use brand color ${c}`);
+    d.onclick = () => {
+      const o = selected();
+      if (!o) return;
+      o[colorTarget] = c;
+      fillInspector();
+      save();
+    };
+    return d;
+  });
+  const any = document.createElement('button');
+  any.type = 'button';
+  any.className = 'any';
+  any.setAttribute('aria-label', 'Pick any color');
+  any.onclick = () => {
+    const input = colorInput(colorTarget);
+    if (input.showPicker) input.showPicker();
+    else input.click();
+  };
+  $('#brandDots').replaceChildren(...dots, any);
+  syncColorTarget();
+}
+
+// Wraps the selected words in *stars*, which highlights them.
+$('#markWord').onclick = () => {
+  const ta = props.querySelector('[data-k="text"]');
+  const { selectionStart: a, selectionEnd: z, value: v } = ta;
+  if (a === z) return toast('Select a word in the text first, then tap the marker.');
+  ta.value = `${v.slice(0, a)}*${v.slice(a, z)}*${v.slice(z)}`;
+  ta.dispatchEvent(new Event('input', { bubbles: true }));
+};
 
 /* ---------- phone layout ---------- */
 

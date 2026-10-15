@@ -125,57 +125,61 @@
 
     <form id="props" hidden onsubmit="return false">
       <h2 id="propTitle">Headline</h2>
-      <label class="f" data-for="lines lower quote text"><span id="textLabel">Text</span><textarea data-k="text" rows="3"></textarea>
+      <label class="f" data-group="text" data-for="lines lower quote text"><span id="textLabel">Text</span><textarea data-k="text" rows="3"></textarea>
         <small data-for="lines quote text">Put *asterisks* around words to highlight them.</small></label>
-      <label class="f" data-for="lower quote"><span id="subLabel">Title</span><input data-k="sub" type="text"></label>
-      <label class="f" data-subs="only">Background
+      <button type="button" id="markWord" class="mark" data-group="text" data-for="lines quote text" title="Highlight the selected word" aria-label="Highlight the selected word"><svg class="ic" aria-hidden="true"><use href="#i-marker"/></svg><span class="w">Highlight selected word</span></button>
+      <label class="f" data-group="text" data-for="lower quote"><span id="subLabel">Title</span><input data-k="sub" type="text"></label>
+      <label class="f" data-group="text" data-subs="only">Background
         <select data-k="kind">
           <option value="lines">Box behind each line</option>
           <option value="text">None, with a soft shadow</option>
         </select>
       </label>
-      <label class="f" data-subs="only">Shift timing (seconds)<input data-k="offset" type="number" step="0.1">
+      <label class="f" data-group="text" data-subs="only">Shift timing (seconds)<input data-k="offset" type="number" step="0.1">
         <small>Use a negative number if the subtitles appear late.</small></label>
-      <button type="button" id="replaceImage" class="wide" data-for="image"><svg class="ic" aria-hidden="true"><use href="#i-swap"/></svg>Replace image</button>
-      <label class="f" data-for="lines lower quote text">Typeface<select data-k="font"></select></label>
-      <div class="f" data-for="lines lower quote text">Text size
+      <button type="button" id="replaceImage" class="wide" data-group="text" data-for="image"><svg class="ic" aria-hidden="true"><use href="#i-swap"/></svg>Replace image</button>
+
+      <label class="f" data-group="style" data-for="lines lower quote text"><span class="w">Typeface</span><select data-k="font" data-chips="font"></select></label>
+      <div class="f cued" data-group="style" data-for="lines lower quote text"><span class="w">Text size</span><span class="fi fi-size" title="Text size" aria-hidden="true"><small>A</small>A</span>
         <div class="num"><button type="button" data-step="-2" aria-label="Smaller">−</button><label class="num-box"><input data-k="size" min="18" max="220" step="1" type="number" inputmode="numeric" aria-label="Text size"></label><button type="button" data-step="2" aria-label="Bigger">+</button></div>
       </div>
-      <div class="f">Width
+      <div class="f cued" data-group="style"><span class="w">Width</span><svg class="ic fi" aria-hidden="true"><use href="#i-width"/></svg>
         <div class="num"><button type="button" data-step="-5" aria-label="Smaller">−</button><label class="num-box"><input data-k="width" data-scale="100" min="5" max="100" step="1" type="number" inputmode="numeric" aria-label="Width"><i>%</i></label><button type="button" data-step="5" aria-label="Bigger">+</button></div>
       </div>
-      <div class="f" data-for="lines lower quote text">Alignment
+      <div class="f" data-group="style" data-for="lines lower quote text"><span class="w">Alignment</span>
         <div class="seg" id="align">
           <button type="button" data-v="left" title="Left" aria-label="Align left"><svg class="ic" aria-hidden="true"><use href="#i-left"/></svg></button>
           <button type="button" data-v="center" title="Center" aria-label="Align center"><svg class="ic" aria-hidden="true"><use href="#i-center"/></svg></button>
           <button type="button" data-v="right" title="Right" aria-label="Align right"><svg class="ic" aria-hidden="true"><use href="#i-right"/></svg></button>
         </div>
       </div>
-      <label class="check" data-for="lines lower quote text"><input data-k="upper" type="checkbox"> All capitals</label>
-      <div class="f" data-for="lines lower quote text">Colors
+      <label class="check caps" data-group="style" data-for="lines lower quote text" title="All capitals"><input data-k="upper" type="checkbox"> <span class="w">All capitals</span><b class="caps-ic" aria-hidden="true">AA</b></label>
+
+      <div class="f" data-group="color" data-for="lines lower quote text"><span class="w">Colors</span>
         <div class="looks" id="looks"></div>
         <div class="colors">
-          <label>Text<input data-k="color" type="color"></label>
-          <label data-for="lines lower quote">Box<input data-k="bg" type="color"></label>
-          <label><span id="accentLabel">Highlight</span><input data-k="accent" type="color"></label>
+          <label title="Text color"><span>Text</span><input data-k="color" type="color"></label>
+          <label data-for="lines lower quote" title="Box color"><span>Box</span><input data-k="bg" type="color"></label>
+          <label title="Highlight color"><span id="accentLabel">Highlight</span><input data-k="accent" type="color"></label>
         </div>
+        <div class="brand-dots" id="brandDots"></div>
       </div>
-      <label class="f" data-for="lines lower quote">Box opacity<input data-k="bgAlpha" type="range" min="0" max="1" step="0.05"></label>
-      <label class="f" data-for="image">Opacity<input data-k="alpha" type="range" min="0.05" max="1" step="0.05"></label>
-      <label class="f" data-for="lines quote image">Rounded corners<input data-k="radius" type="range" min="0" max="1" step="0.05"></label>
-      <details class="group" id="timing" data-subs="hide">
-        <summary>Timing &amp; animation</summary>
-        <div class="f" data-subs="hide">On screen
-          <div class="times">
+      <label class="f cued" data-group="color" data-for="lines lower quote"><span class="w">Box opacity</span><svg class="ic fi" aria-hidden="true"><use href="#i-opacity"/></svg><input data-k="bgAlpha" type="range" min="0" max="1" step="0.05" aria-label="Box opacity"></label>
+      <label class="f cued" data-group="color" data-for="image"><span class="w">Opacity</span><svg class="ic fi" aria-hidden="true"><use href="#i-opacity"/></svg><input data-k="alpha" type="range" min="0.05" max="1" step="0.05" aria-label="Opacity"></label>
+      <label class="f cued" data-group="color" data-for="lines quote image"><span class="w">Rounded corners</span><svg class="ic fi" aria-hidden="true"><use href="#i-corner"/></svg><input data-k="radius" type="range" min="0" max="1" step="0.05" aria-label="Rounded corners"></label>
+
+      <div class="group" id="timing" data-group="timing" data-subs="hide">
+        <div class="f"><span class="w">On screen</span>
+          <div class="times span-times">
             <label>From<input data-k="start" type="number" step="0.1" min="0"></label>
             <label>To<input data-k="end" type="number" step="0.1" min="0"></label>
           </div>
-          <button type="button" id="whole" class="wide"><svg class="ic" aria-hidden="true"><use href="#i-whole"/></svg>Show for the whole video</button>
+          <button type="button" id="whole" class="wide" title="Show for the whole video" aria-label="Show for the whole video"><svg class="ic" aria-hidden="true"><use href="#i-whole"/></svg><span class="w">Show for the whole video</span></button>
         </div>
-        <div class="f" data-subs="hide">Animation
+        <div class="f"><span class="w">Animation</span>
           <div class="times">
-            <label>Entrance
-              <select data-k="anim">
+            <label class="move"><span class="w">Entrance</span><svg class="ic fi" aria-hidden="true"><use href="#i-enter"/></svg>
+              <select data-k="anim" data-chips="anim" aria-label="Entrance">
                 <option value="none">None</option>
                 <option value="fade">Fade in</option>
                 <option value="rise">Rise up</option>
@@ -183,8 +187,8 @@
                 <option value="slide">Slide in</option>
               </select>
             </label>
-            <label>Exit
-              <select data-k="out">
+            <label class="move"><span class="w">Exit</span><svg class="ic fi" aria-hidden="true"><use href="#i-exit"/></svg>
+              <select data-k="out" data-chips="anim" aria-label="Exit">
                 <option value="none">None</option>
                 <option value="fade">Fade out</option>
                 <option value="rise">Drop down</option>
@@ -193,13 +197,13 @@
               </select>
             </label>
           </div>
-          <select data-k="speed" data-num class="wide">
+          <select data-k="speed" data-num data-chips="speed" class="wide" aria-label="Speed">
             <option value="0.25">Quick</option>
             <option value="0.45">Normal speed</option>
             <option value="0.9">Slow</option>
           </select>
         </div>
-      </details>
+      </div>
       <div class="actions">
         <button type="button" id="dup"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg>Duplicate</button>
         <button type="button" id="front"><svg class="ic" aria-hidden="true"><use href="#i-front"/></svg>Bring to front</button>
@@ -225,6 +229,14 @@
         <button type="button" id="delClip" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>Remove clip</button>
       </div>
     </form>
+
+    <!-- Phone only: picks which group of settings the panel shows. -->
+    <nav class="edit-tabs" id="editTabs" hidden aria-label="Edit">
+      <button type="button" data-tab="text"><svg class="ic" aria-hidden="true"><use href="#i-text"/></svg>Text</button>
+      <button type="button" data-tab="style"><span class="aa" aria-hidden="true">Aa</span>Style</button>
+      <button type="button" data-tab="color"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg>Color</button>
+      <button type="button" data-tab="timing"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>Timing</button>
+    </nav>
   </aside>
 </main>
 
@@ -250,6 +262,7 @@
       <label>Light<input data-b="light" type="color"></label>
       <label>Main<input data-b="main" type="color"></label>
       <label>Accent<input data-b="accent" type="color"></label>
+      <label>Extra<input data-b="extra" type="color"></label>
     </div>
   </div>
   <label class="f">Headline typeface<select data-b="head"></select></label>
