@@ -434,6 +434,24 @@ select.wide { display: block; }
 .vclip .kf.glide { background: #fff; }
 .vclip .kf.on { box-shadow: 0 0 0 2px var(--tally); }
 .vclip .kf::before { content: ""; position: absolute; inset: -6px; }
+.vclip .kf { touch-action: none; }
+.vclip .kf.dragging { box-shadow: 0 0 0 2px var(--tally); cursor: grabbing; }
+/* The time shown above a keyframe while it's dragged. */
+.key-tip {
+  position: fixed;
+  z-index: 12;
+  padding: 4px 8px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  color: #0d1220;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 8px));
+  pointer-events: none;
+}
 
 /* Trim handles: a wide grab area with a slim white grip drawn inside it. */
 .clip::before, .clip::after, .vclip::before, .vclip::after {

@@ -1659,13 +1659,7 @@ function renderTimeline() {
         d._key = k;
         d.style.left = `${((k.t - s.c.in) / s.len) * 100}%`;
         d.title = k.move === 'glide' ? 'Keyframe (glide)' : 'Keyframe (jump)';
-        d.onpointerdown = (e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          selectClip(s.c.id);
-          setTime(s.start + (k.t - s.c.in));
-          syncFraming();
-        };
+        d.onpointerdown = (e) => dragKey(e, s, k, d, el);
         el.append(d);
       }
       lane.append(el);
@@ -1786,6 +1780,83 @@ function startBarDrag(e, o, clip, lane) {
 }
 
 // Dragging either end of a clip trims it; everything after shuffles along.
+// Tap a keyframe diamond to go to it; drag it to retime it. Option/Alt-drag moves a copy instead.
+// It stays inside the clip and between its neighbours, and snaps to the clip's ends and to where
+// graphics start or end. The diamond moves in place (re-rendering mid-drag cancels touches on phones).
+const keyTip = Object.assign(document.createElement('div'), { className: 'key-tip', hidden: true });
+document.body.append(keyTip);
+
+function dragKey(e, s, k, diamond, bar) {
+  e.stopPropagation();
+  e.preventDefault();
+  if (exporting) return;
+  const c = s.c, t0 = k.t, x0 = e.clientX, FRAME = 1 / 30;
+  selectClip(c.id);
+  pause();
+  const pxPerSec = bar.offsetWidth / s.len;
+  // Snap targets in the clip's own time, with a name for the tip.
+  const toSrc = (T) => c.in + (T - s.start);
+  const targets = [[c.in, 'clip start'], [c.out, 'clip end']];
+  for (const o of state.overlays) {
+    const name = COVERS.has(o.kind) ? COVER_NAMES[o.kind] : (o.text.split('\n')[0].replace(/\*/g, '') || PRESETS[o.type].name).slice(0, 24);
+    targets.push([toSrc(o.start), `${name} starts`], [toSrc(endOf(o)), `${name} ends`]);
+  }
+  let moving = false, key = k, el = diamond;
+  const move = (ev) => {
+    const dx = ev.clientX - x0;
+    if (!moving && Math.abs(dx) < 5) return;
+    if (!moving) {
+      moving = true;
+      if (e.altKey) {
+        key = { ...k };
+        c.keys.push(key);
+        el = diamond.cloneNode();
+        el._key = key;
+        bar.append(el);
+      }
+      el.classList.add('dragging');
+    }
+    let t = t0 + dx / pxPerSec, snapped = '';
+    for (const [at, label] of targets) {
+      if (Math.abs(at - t) * pxPerSec < 8 && (!snapped || Math.abs(at - t) < Math.abs(snapped[0] - t))) snapped = [at, label];
+    }
+    if (snapped) t = snapped[0];
+    // Neighbours: the keyframes either side of where it started. A copy treats the original as a neighbour.
+    const others = c.keys.filter((x) => x !== key && x !== k);
+    let lo = Math.max(c.in, ...others.filter((x) => x.t < t0).map((x) => x.t + FRAME));
+    let hi = Math.min(c.out, ...others.filter((x) => x.t > t0).map((x) => x.t - FRAME));
+    if (key !== k) {
+      if (dx > 0) lo = Math.max(lo, t0 + FRAME);
+      else hi = Math.min(hi, t0 - FRAME);
+    }
+    const clamped = clamp(t, lo, hi);
+    if (clamped !== t) snapped = '';
+    key.t = clamped;
+    c.keys.sort((a, b) => a.t - b.t);
+    el.style.left = `${((key.t - c.in) / s.len) * 100}%`;
+    setTime(s.start + (key.t - c.in));
+    keyTip.hidden = false;
+    keyTip.textContent = `${key !== k ? 'Copy · ' : ''}${fmt(s.start + (key.t - c.in))}${snapped ? ` · ${snapped[1]}` : ''}`;
+    keyTip.style.left = `${ev.clientX}px`;
+    keyTip.style.top = `${bar.getBoundingClientRect().top}px`;
+  };
+  const up = () => {
+    removeEventListener('pointermove', move);
+    removeEventListener('pointerup', up);
+    removeEventListener('pointercancel', up);
+    keyTip.hidden = true;
+    if (!moving) setTime(s.start + (k.t - c.in));
+    else {
+      renderTimeline();
+      save();
+    }
+    syncFraming();
+  };
+  addEventListener('pointermove', move);
+  addEventListener('pointerup', up);
+  addEventListener('pointercancel', up);
+}
+
 function startTrim(e, s, el, lane) {
   const c = s.c;
   selectClip(c.id);
