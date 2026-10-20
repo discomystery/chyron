@@ -16,6 +16,10 @@ Everything runs in your browser. Videos are never uploaded anywhere.
 
 **Safe zones:** pick TikTok, Reels or Shorts under Safe zones to shade, roughly, where each app's buttons and captions sit over a vertical video. They're only shown while editing, never exported.
 
+**Exporting several shapes:** Export lets you tick Vertical 9:16, Portrait 4:5, Square 1:1 and Wide 16:9 and makes one video of each, named by shape. Graphics keep their places in the frame and each clip stays centred on the same part of its picture.
+
+**Cover image:** Cover image opens a picker with a preview, a strip of frames and a scrubber. Choose the moment, with or without graphics, and save it as a JPEG in one or more shapes. The chosen moment is marked on the timeline.
+
 **Layers:** drag a graphic's name in the timeline up or down to change what sits in front.
 
 **Reframing a clip:** select a video clip (the rest of its picture shows dimmed around the frame), then drag the video to move it in the frame and pinch (or scroll) to zoom. Changing it at another moment adds a keyframe there, shown as a diamond on the clip. Each keyframe either **jumps** (holds, then cuts to the new framing) or **glides** (moves smoothly from the keyframe before). Drag a diamond to retime its keyframe (it snaps to the clip's ends and to where graphics start or end); hold Option/Alt while dragging to copy it instead.

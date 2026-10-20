@@ -104,6 +104,13 @@ input[type="checkbox"] { accent-color: var(--signal); width: 16px; height: 16px;
 .pair button:first-child { border-radius: 6px 0 0 6px; }
 .pair button:last-child { border-radius: 0 6px 6px 0; margin-left: -1px; }
 .inline { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; }
+.bar button, .bar .inline { white-space: nowrap; }
+/* On mid-size screens the menus' own wording is enough; drop their little names to fit the bar. */
+@media (min-width: 901px) and (max-width: 1600px) {
+  .bar .inline .lab { display: none; }
+  #install .lab { display: none; }
+  #install { padding: 7px; }
+}
 
 .menu { position: relative; }
 .menu summary { list-style: none; }
@@ -333,6 +340,23 @@ textarea:disabled { background: transparent; }
 .zoom-row .num { flex: 1; margin: 0; }
 .zoom-row .w { font-size: 13px; }
 #resetFrame { width: 38px; height: 36px; padding: 0; }
+
+/* Shape tiles for export and cover images. */
+.shape-pick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 4px 0 6px; }
+.shape-pick button { flex-direction: column; justify-content: flex-end; gap: 8px; height: 104px; padding: 10px 4px 8px; font-size: 12px; line-height: 1.2; text-align: center; }
+.shape-pick button i { display: block; flex: none; border: 2px solid var(--muted); border-radius: 3px; }
+.shape-pick button[aria-pressed="true"] { background: #1d2a55; border-color: var(--signal); box-shadow: 0 0 0 1px var(--signal); color: var(--ink); }
+.shape-pick button[aria-pressed="true"] i { border-color: var(--signal); background: rgba(68, 112, 255, 0.25); }
+
+/* Cover image picker. */
+.cover-dlg { width: min(560px, 94vw); }
+.cover-view { display: grid; place-items: center; margin-bottom: 10px; padding: 8px; background: #0a0e19; border-radius: 8px; }
+#coverPreview { display: block; width: auto; max-width: 100%; max-height: 42vh; border-radius: 3px; }
+#coverTime { width: 100%; accent-color: var(--signal); }
+.cover-strip { display: flex; gap: 4px; margin: 8px 0 12px; overflow-x: auto; scrollbar-width: none; }
+.cover-strip button { flex: none; padding: 0; overflow: hidden; border-radius: 4px; }
+.cover-strip canvas { display: block; height: 64px; width: auto; }
+.cover-mark { position: absolute; bottom: 0; width: 8px; height: 8px; margin-left: -4px; background: var(--flash); border-radius: 2px; transform: rotate(45deg); pointer-events: none; }
 
 /* Phone-only pieces. */
 .fi, .caps-ic, .chips, .brand-dots, .edit-tabs { display: none; }

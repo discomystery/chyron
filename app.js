@@ -1700,6 +1700,13 @@ function renderTimeline() {
     tick.textContent = step < 1 ? fmt(t) : fmt(t).slice(0, -2);
     ruler.append(tick);
   }
+  if (state.coverTime != null && state.coverTime <= duration) {
+    const mark = document.createElement('b');
+    mark.className = 'cover-mark';
+    mark.style.left = pct(state.coverTime);
+    mark.title = 'Cover image';
+    ruler.append(mark);
+  }
   rowsEl.innerHTML = '';
 
   if (hasVideo) {
@@ -2167,30 +2174,92 @@ async function exportRealtime() {
   return new Blob(chunks, { type: mime.split(';')[0] });
 }
 
-async function exportVideo() {
+const SHAPE_NAMES = { '9:16': 'Vertical 9:16', '4:5': 'Portrait 4:5', '1:1': 'Square 1:1', '16:9': 'Wide 16:9' };
+const shapeTag = (f) => f.replace(':', 'x');
+
+// A row of shape tiles to tick, each drawn at its own proportions.
+function shapePicker(box, chosen, onChange) {
+  box.replaceChildren(...Object.keys(FORMATS).map((f) => {
+    const [w, h] = FORMATS[f];
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('aria-pressed', chosen.has(f));
+    const frame = document.createElement('i');
+    const k = 44 / Math.max(w, h);
+    Object.assign(frame.style, { width: `${Math.round(w * k)}px`, height: `${Math.round(h * k)}px` });
+    b.append(frame, SHAPE_NAMES[f]);
+    b.onclick = () => {
+      if (chosen.has(f) && chosen.size > 1) chosen.delete(f);
+      else chosen.add(f);
+      b.setAttribute('aria-pressed', chosen.has(f));
+      onChange();
+    };
+    return b;
+  }));
+  onChange();
+}
+
+// Draws and encodes the whole video once at the current shape.
+async function exportOnce() {
+  let blob = null;
+  if (MB && window.VideoEncoder) {
+    exportMode = 'fast';
+    $('#exportMsg').textContent = 'Every frame is being drawn and saved. You can leave this tab in the background, but it finishes fastest in front.';
+    try {
+      blob = await exportFast();
+    } catch (err) {
+      console.warn('Fast export failed, recording instead:', err);
+    }
+  }
+  if (!blob && !cancelled) {
+    exportMode = 'realtime';
+    $('#exportMsg').textContent = 'This video has to be recorded while it plays through once at normal speed. Keep this tab open and in front until it finishes.';
+    blob = await exportRealtime();
+  }
+  return blob;
+}
+
+let exportChoice;
+function openExport() {
+  if (exporting) return;
+  if (!hasVideo) return toast('Add a video first, then export.');
+  exportChoice = new Set((state.exportShapes || [state.format]).filter((f) => FORMATS[f]));
+  if (!exportChoice.size) exportChoice.add(state.format);
+  shapePicker($('#exportShapes'), exportChoice, () => {
+    const n = exportChoice.size;
+    $('#exportGo').textContent = n > 1 ? `Export ${n} videos` : 'Export video';
+  });
+  $('#exportDlg').showModal();
+}
+$('#exportCancel').onclick = () => $('#exportDlg').close();
+$('#exportGo').onclick = () => {
+  $('#exportDlg').close();
+  state.exportShapes = Object.keys(FORMATS).filter((f) => exportChoice.has(f));
+  save();
+  exportVideo(state.exportShapes);
+};
+
+// Exports each chosen shape in turn, then hands over all the files together.
+async function exportVideo(shapes = [state.format]) {
   if (exporting) return;
   if (!hasVideo) return toast('Add a video first, then export.');
   pause();
-  const resumeAt = T;
+  const resumeAt = T, shapeBefore = state.format;
   cancelled = false;
   exporting = true;
-  exportProgress = 0;
   $('#exporting').hidden = false;
-  let blob = null, problem = null;
+  const files = [];
+  let problem = null;
   try {
-    if (MB && window.VideoEncoder) {
-      exportMode = 'fast';
-      $('#exportMsg').textContent = 'Every frame is being drawn and saved. You can leave this tab in the background, but it finishes fastest in front.';
-      try {
-        blob = await exportFast();
-      } catch (err) {
-        console.warn('Fast export failed, recording instead:', err);
-      }
-    }
-    if (!blob && !cancelled) {
-      exportMode = 'realtime';
-      $('#exportMsg').textContent = 'This video has to be recorded while it plays through once at normal speed. Keep this tab open and in front until it finishes.';
-      blob = await exportRealtime();
+    for (const [i, f] of shapes.entries()) {
+      if (cancelled) break;
+      setFormat(f);
+      exportProgress = 0;
+      $('#exportTitle').textContent = shapes.length > 1 ? `Exporting ${i + 1} of ${shapes.length}: ${SHAPE_NAMES[f]}` : 'Exporting your video';
+      const blob = await exportOnce();
+      if (!blob) break;
+      const ext = blob.type === 'video/mp4' ? 'mp4' : 'webm';
+      files.push({ blob, name: `${projectName()}-graphics${shapes.length > 1 ? `-${shapeTag(f)}` : ''}.${ext}` });
     }
   } catch (err) {
     problem = err;
@@ -2198,41 +2267,143 @@ async function exportVideo() {
   exporting = false;
   exportMode = null;
   $('#exporting').hidden = true;
+  setFormat(shapeBefore);
   setTime(resumeAt);
   if (problem) return toast(`Export stopped: ${problem.message}`);
-  if (cancelled || !blob) return toast('Export cancelled.');
-  const name = `${projectName()}-graphics.${blob.type === 'video/mp4' ? 'mp4' : 'webm'}`;
-  deliver(blob, name, `Video exported as ${name}`);
+  if (cancelled || !files.length) return toast('Export cancelled.');
+  deliver(files, files.length > 1 ? `${files.length} videos exported.` : `Video exported as ${files[0].name}`);
 }
 
-// On a phone, offer the share sheet so the file can go straight to Photos or another app.
+// On a phone, offer the share sheet so files can go straight to Photos or another app.
 // Sharing needs a fresh tap, so it waits behind a button rather than running when export ends.
-function deliver(blob, name, msg) {
-  const file = new File([blob], name, { type: blob.type });
-  if (!touch || !navigator.canShare || !navigator.canShare({ files: [file] })) {
-    download(blob, name);
+function deliver(items, msg) {
+  const files = items.map(({ blob, name }) => new File([blob], name, { type: blob.type }));
+  const downloadAll = () => items.forEach(({ blob, name }, i) => setTimeout(() => download(blob, name), i * 400));
+  if (!touch || !navigator.canShare || !navigator.canShare({ files })) {
+    downloadAll();
     return toast(msg);
   }
-  const image = blob.type.startsWith('image/');
-  $('#doneTitle').textContent = image ? 'Your image is ready' : 'Your video is ready';
-  $('#doneMsg').textContent = `Choose Save ${image ? 'Image' : 'Video'} in the share sheet to put it in Photos, or send it straight to an app.`;
+  const image = items[0].blob.type.startsWith('image/'), many = items.length > 1;
+  const what = image ? (many ? 'images are' : 'image is') : many ? 'videos are' : 'video is';
+  $('#doneTitle').textContent = `Your ${what} ready`;
+  $('#doneMsg').textContent = `Choose Save ${image ? 'Image' : 'Video'} in the share sheet to put ${many ? 'them' : 'it'} in Photos, or send ${many ? 'them' : 'it'} straight to an app.`;
   $('#done').hidden = false;
-  $('#shareFile').onclick = () => navigator.share({ files: [file] }).then(() => ($('#done').hidden = true), () => {});
+  $('#shareFile').onclick = () => navigator.share({ files }).then(() => ($('#done').hidden = true), () => {});
   $('#downloadFile').onclick = () => {
-    download(blob, name);
+    downloadAll();
     $('#done').hidden = true;
   };
 }
 $('#closeDone').onclick = () => ($('#done').hidden = true);
 
-$('#export').onclick = exportVideo;
+$('#export').onclick = openExport;
 $('#cancel').onclick = () => {
   cancelled = true;
   if (stopRealtime) stopRealtime();
 };
+
+/* ---------- cover image ---------- */
+
+// Pick a frame to save as the post's cover image, with or without the graphics, in any shapes.
+const coverDlg = $('#coverDlg');
+let coverChoice;
+
 $('#still').onclick = () => {
-  drawFrame(T, false, () => ctx.drawImage(bgCanvas, 0, 0));
-  canvas.toBlob((blob) => deliver(blob, `${projectName()}-frame.png`, 'Frame saved as an image.'), 'image/png');
+  if (!hasVideo) return toast('Add a video first, then pick a cover image.');
+  pause();
+  const t = state.coverTime != null ? clamp(state.coverTime, 0, duration) : T;
+  setTime(t);
+  Object.assign($('#coverTime'), { max: duration, value: t });
+  coverChoice = new Set([state.format]);
+  shapePicker($('#coverShapes'), coverChoice, () => {
+    $('#coverSave').textContent = coverChoice.size > 1 ? `Save ${coverChoice.size} images` : 'Save image';
+  });
+  coverDlg.showModal();
+  coverThumbs();
+};
+$('#coverTime').oninput = (e) => {
+  setTime(+e.target.value);
+  state.coverTime = T;
+  renderTimeline();
+  save();
+};
+$('#coverClose').onclick = () => coverDlg.close();
+
+// The preview copies the main picture each frame, with or without graphics.
+function updateCoverPreview() {
+  if (!coverDlg.open) return;
+  const c = $('#coverPreview');
+  const h = Math.round((c.width * canvas.height) / canvas.width);
+  if (c.height !== h) c.height = h;
+  c.getContext('2d').drawImage($('#coverGraphics').checked ? canvas : bgCanvas, 0, 0, c.width, c.height);
+}
+
+// A strip of frames across the whole video to jump between.
+async function coverThumbs() {
+  const strip = $('#coverStrip');
+  strip.replaceChildren();
+  if (!MB) return;
+  const n = 8, tw = 90, k = tw / canvas.width;
+  const times = Array.from({ length: n }, (_, i) => (duration * (i + 0.5)) / n);
+  const cells = times.map((t) => {
+    const c = document.createElement('canvas');
+    c.width = tw;
+    c.height = Math.round(canvas.height * k);
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.setAttribute('aria-label', `Go to ${fmt(t)}`);
+    b.append(c);
+    b.onclick = () => {
+      setTime(t);
+      $('#coverTime').value = t;
+      state.coverTime = t;
+      renderTimeline();
+      save();
+    };
+    strip.append(b);
+    return c;
+  });
+  const inputs = new Map();
+  try {
+    for (const s of segs) {
+      const mine = times.map((t, i) => [t, i]).filter(([t]) => t >= s.start && t < s.start + s.len);
+      if (!mine.length) continue;
+      if (!inputs.has(s.m.name)) inputs.set(s.m.name, new MB.Input({ formats: MB.ALL_FORMATS, source: new MB.BlobSource(s.m.file) }));
+      const track = await inputs.get(s.m.name).getPrimaryVideoTrack();
+      const src = mine.map(([t]) => s.c.in + (t - s.start));
+      let j = 0;
+      for await (const sample of new MB.VideoSampleSink(track).samplesAtTimestamps(src)) {
+        const [, i] = mine[j];
+        if (sample) {
+          const g = cells[i].getContext('2d');
+          g.setTransform(k, 0, 0, k, 0, 0);
+          drawCover(g, sample.displayWidth, sample.displayHeight, (x, y, w, h) => sample.draw(g, x, y, w, h), framingAt(s.c, src[j]));
+          sample.close();
+        }
+        j++;
+      }
+    }
+  } catch (err) {
+    console.warn('Could not make cover thumbnails:', err);
+  } finally {
+    for (const input of inputs.values()) input.dispose();
+  }
+}
+
+// Draws the chosen moment at each chosen shape and saves them as JPEGs.
+$('#coverSave').onclick = async () => {
+  const shapeBefore = state.format, graphics = $('#coverGraphics').checked;
+  const files = [];
+  for (const f of Object.keys(FORMATS).filter((f) => coverChoice.has(f))) {
+    setFormat(f);
+    refreshBackground();
+    if (graphics) drawFrame(T, false, () => ctx.drawImage(bgCanvas, 0, 0));
+    const blob = await new Promise((done) => (graphics ? canvas : bgCanvas).toBlob(done, 'image/jpeg', 0.92));
+    files.push({ blob, name: `${projectName()}-cover${coverChoice.size > 1 ? `-${shapeTag(f)}` : ''}.jpg` });
+  }
+  setFormat(shapeBefore);
+  coverDlg.close();
+  deliver(files, files.length > 1 ? `${files.length} cover images saved.` : 'Cover image saved.');
 };
 
 let toastTimer;
@@ -2263,7 +2434,7 @@ addEventListener('click', (e) => {
 });
 
 addEventListener('keydown', (e) => {
-  if (e.target.closest('input, textarea, select') || exporting || $('#brand').open) return;
+  if (e.target.closest('input, textarea, select') || exporting || document.querySelector('dialog[open]')) return;
   const o = selected();
   const mod = e.metaKey || e.ctrlKey;
   if (mod && e.key.toLowerCase() === 'z') {
@@ -2307,6 +2478,7 @@ function tick(ts) {
   }
   updateSel();
   updateGhost();
+  updateCoverPreview();
   if (selectedClipId && !gesture) syncFraming();
   // Keep the subtitle text box showing the line under the playhead.
   const subs = selected();

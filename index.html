@@ -33,7 +33,7 @@
       </div>
     </details>
     <button id="brandBtn"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg>Brand kit</button>
-    <label class="inline">Shape
+    <label class="inline"><span class="lab">Shape</span>
       <select id="format">
         <option value="9:16">Vertical 9:16</option>
         <option value="4:5">Portrait 4:5</option>
@@ -41,23 +41,23 @@
         <option value="16:9">Wide 16:9</option>
       </select>
     </label>
-    <label class="inline">Video
+    <label class="inline"><span class="lab">Video</span>
       <select id="fit">
         <option value="cover">Fill the frame</option>
         <option value="contain">Fit inside</option>
       </select>
     </label>
-    <label class="inline" title="Shade where each app's buttons and captions cover a vertical video">Safe zones
+    <label class="inline" title="Shade where each app's buttons and captions cover a vertical video"><span class="lab">Safe zones</span>
       <select id="safeZones">
-        <option value="">Off</option>
-        <option value="tiktok">TikTok</option>
-        <option value="reels">Reels</option>
-        <option value="shorts">Shorts</option>
+        <option value="">No safe zones</option>
+        <option value="tiktok">TikTok safe zones</option>
+        <option value="reels">Reels safe zones</option>
+        <option value="shorts">Shorts safe zones</option>
       </select>
     </label>
     <span class="spacer"></span>
-    <button id="install" hidden><svg class="ic" aria-hidden="true"><use href="#i-install"/></svg>Install app</button>
-    <button id="still"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>Save frame as image</button>
+    <button id="install" hidden title="Install app" aria-label="Install app"><svg class="ic" aria-hidden="true"><use href="#i-install"/></svg><span class="lab">Install app</span></button>
+    <button id="still"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>Cover image</button>
   </div>
   <button id="moreBtn" class="icon" aria-label="More" aria-expanded="false" aria-controls="more"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg></button>
   <button id="export" class="primary"><svg class="ic" aria-hidden="true"><use href="#i-export"/></svg>Export<span class="lbl"> video</span></button>
@@ -347,9 +347,32 @@
   <div class="actions"><button type="button" id="brandDone" class="primary">Done</button></div>
 </dialog>
 
+<dialog id="exportDlg">
+  <h2>Export video</h2>
+  <p class="hint">Pick the shapes to make. Graphics keep their places in the frame, and each clip stays centred on the same part of its picture.</p>
+  <div class="shape-pick" id="exportShapes"></div>
+  <div class="actions">
+    <button id="exportCancel">Cancel</button>
+    <button id="exportGo" class="primary">Export</button>
+  </div>
+</dialog>
+
+<dialog id="coverDlg" class="cover-dlg">
+  <h2>Cover image</h2>
+  <div class="cover-view"><canvas id="coverPreview" width="270" height="480"></canvas></div>
+  <input id="coverTime" type="range" min="0" max="1" step="0.01" aria-label="Moment in the video">
+  <div class="cover-strip" id="coverStrip"></div>
+  <label class="check"><input id="coverGraphics" type="checkbox" checked> Include graphics</label>
+  <div class="shape-pick" id="coverShapes"></div>
+  <div class="actions">
+    <button id="coverClose">Close</button>
+    <button id="coverSave" class="primary">Save image</button>
+  </div>
+</dialog>
+
 <div class="modal" id="exporting" hidden>
   <div class="card">
-    <h2>Exporting your video</h2>
+    <h2 id="exportTitle">Exporting your video</h2>
     <p id="exportMsg"></p>
     <div class="progress"><i id="progress"></i></div>
     <p id="exportTime" class="time"></p>
