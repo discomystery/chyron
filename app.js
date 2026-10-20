@@ -1508,13 +1508,32 @@ const stepNumber = (e) => {
 props.addEventListener('click', stepNumber);
 clipProps.addEventListener('click', stepNumber);
 $('#align').addEventListener('click', (e) => {
-  const o = selected();
-  if (!o || !e.target.dataset.v) return;
-  o.align = e.target.dataset.v;
+  const o = selected(), b = e.target.closest('button');
+  if (!o || !b) return;
+  o.align = b.dataset.v;
   fillInspector();
   save();
 });
 
+$('#startHere').onclick = () => {
+  const o = selected();
+  if (!o) return;
+  const len = endOf(o) - o.start;
+  o.start = clamp(T, 0, duration - 0.1);
+  setEnd(o, Math.min(o.start + len, duration));
+  fillInspector();
+  renderTimeline();
+  commit();
+};
+$('#endHere').onclick = () => {
+  const o = selected();
+  if (!o) return;
+  if (T <= o.start + 0.1) return toast('Move the playhead after the graphic’s start, then tap End here.');
+  setEnd(o, T);
+  fillInspector();
+  renderTimeline();
+  commit();
+};
 $('#whole').onclick = () => {
   const o = selected();
   o.start = 0;
@@ -1545,7 +1564,8 @@ function removeSelected() {
   } else state.overlays = state.overlays.filter((o) => o.id !== selectedId);
   select(null);
   renderTimeline();
-  save();
+  commit();
+  toast('Deleted. Undo brings it back.');
 }
 $('#del').onclick = $('#delClip').onclick = removeSelected;
 
@@ -1555,7 +1575,7 @@ function addOverlay(o) {
   state.overlays.push(o);
   renderTimeline();
   select(o.id);
-  save();
+  commit();
 }
 document.querySelectorAll('[data-add]').forEach((btn) => (btn.onclick = () => addOverlay(makeOverlay(btn.dataset.add))));
 
@@ -1773,7 +1793,7 @@ $('#brand').addEventListener('input', (e) => {
   save();
 });
 $('#brandBtn').onclick = () => $('#brand').showModal();
-$('#brandDone').onclick = () => $('#brand').close();
+$('#brandDone').onclick = $('#brandClose').onclick = () => $('#brand').close();
 $('#addFont').onclick = () => $('#fontFile').click();
 $('#googleForm').onsubmit = (e) => {
   e.preventDefault();
@@ -1832,6 +1852,7 @@ function renderTimeline() {
     row.className = 'row video';
     const lane = document.createElement('div');
     lane.className = 'lane';
+    lane.onpointerdown = (e) => seekFromLane(e, lane);
     for (const s of segs) {
       const el = document.createElement('div');
       el.className = 'vclip';
@@ -1876,6 +1897,7 @@ function renderTimeline() {
     name.onpointerdown = (e) => dragLayer(e, row, o);
     const lane = document.createElement('div');
     lane.className = 'lane';
+    lane.onpointerdown = (e) => seekFromLane(e, lane);
     if (o.cues) {
       // Subtitles show every line as its own block; click one to jump to it.
       for (const { c, start, end } of cuePlacements(o)) {
@@ -1907,7 +1929,34 @@ function renderTimeline() {
 // since moving the touched row mid-drag makes phones cancel the touch.
 function dragLayer(e, row, o) {
   if (exporting) return;
+  // On a touch screen a swipe scrolls the timeline; holding still for a moment picks the row up.
+  if (e.pointerType === 'touch') {
+    const hold = setTimeout(() => {
+      cleanup();
+      if (navigator.vibrate) navigator.vibrate(10);
+      dragLayer({ ...e, pointerType: 'held', preventDefault() {}, clientY: e.clientY }, row, o);
+    }, 320);
+    const moved = (ev) => Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) > 8 && cleanup();
+    const ended = (ev) => {
+      cleanup();
+      if (ev.type === 'pointerup') select(o.id);
+    };
+    const cleanup = () => {
+      clearTimeout(hold);
+      removeEventListener('pointermove', moved);
+      removeEventListener('pointerup', ended);
+      removeEventListener('pointercancel', ended);
+      return true;
+    };
+    addEventListener('pointermove', moved);
+    addEventListener('pointerup', ended);
+    addEventListener('pointercancel', ended);
+    return;
+  }
   e.preventDefault();
+  // Once a held row is picked up, stop the finger's movement from scrolling the timeline instead.
+  const noScroll = (ev) => ev.preventDefault();
+  if (e.pointerType === 'held') addEventListener('touchmove', noScroll, { passive: false });
   const rows = [...rowsEl.querySelectorAll('.row[data-id]')], from = rows.indexOf(row);
   const others = rows.filter((r) => r !== row);
   const mids = rows.map((r) => {
@@ -1929,6 +1978,7 @@ function dragLayer(e, row, o) {
     });
   };
   const up = () => {
+    removeEventListener('touchmove', noScroll);
     removeEventListener('pointermove', move);
     removeEventListener('pointerup', up);
     removeEventListener('pointercancel', up);
@@ -1960,9 +2010,20 @@ function startBarDrag(e, o, clip, lane) {
       o.start = clamp(s0 + dt, 0, duration - len);
       setEnd(o, o.start + len);
     }
+    // Keep the graphic on screen while it's moved, showing the edge being dragged.
+    setTime(edge === 'end' ? endOf(o) - 0.02 : o.start + 0.01);
     renderTimeline();
     fillInspector();
   }, save);
+}
+
+// A press on empty lane space moves the playhead there, and dragging scrubs, like the ruler.
+function seekFromLane(e, lane) {
+  if (e.target !== lane || exporting) return;
+  const r = lane.getBoundingClientRect();
+  const x0 = e.clientX - r.left;
+  setTime((x0 / r.width) * duration);
+  dragging(e, (dx) => setTime(((x0 + dx) / r.width) * duration));
 }
 
 // Dragging either end of a clip trims it; everything after shuffles along.
@@ -2656,7 +2717,7 @@ addEventListener('click', (e) => {
 });
 
 addEventListener('keydown', (e) => {
-  if (e.target.closest('input, textarea, select') || exporting || document.querySelector('dialog[open]')) return;
+  if (e.target.closest('input, textarea, select') || exporting || document.querySelector('dialog[open]:not(.transcript)')) return;
   const o = selected();
   const mod = e.metaKey || e.ctrlKey;
   if (mod && e.key.toLowerCase() === 'z') {
@@ -2851,7 +2912,11 @@ function stopCaptions() {
   if (captionWorker) captionWorker.terminate();
   captionWorker = null;
   captioning = false;
-  $('#capGo').disabled = false;
+  lockCaptionOptions(false);
+}
+function lockCaptionOptions(on) {
+  $('#capGo').disabled = on;
+  captionDlg.querySelectorAll('.seg button, .num button, #capWords').forEach((el) => (el.disabled = on));
 }
 
 // A video's sound between two times, as 16 kHz mono, the way Whisper wants it.
@@ -2941,7 +3006,7 @@ $('#capGo').onclick = async () => {
   if (!MB) return captionStatus('Captions need a newer browser.');
   keepStorage();
   captioning = true;
-  $('#capGo').disabled = true;
+  lockCaptionOptions(true);
   const made = [];
   try {
     // Each video file is heard once, over the stretch its clips use.

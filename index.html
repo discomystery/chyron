@@ -218,6 +218,10 @@
             <label>From<input data-k="start" type="number" step="0.1" min="0"></label>
             <label>To<input data-k="end" type="number" step="0.1" min="0"></label>
           </div>
+          <div class="here">
+            <button type="button" id="startHere" title="Start at the playhead"><svg class="ic" aria-hidden="true"><use href="#i-enter"/></svg>Start here</button>
+            <button type="button" id="endHere" title="End at the playhead">End here<svg class="ic" aria-hidden="true"><use href="#i-exit"/></svg></button>
+          </div>
           <button type="button" id="whole" class="wide" title="Show for the whole video" aria-label="Show for the whole video"><svg class="ic" aria-hidden="true"><use href="#i-whole"/></svg><span class="w">Show for the whole video</span></button>
         </div>
         <div class="f"><span class="w">Animation</span>
@@ -320,6 +324,7 @@
 </footer>
 
 <dialog id="brand">
+  <button type="button" id="brandClose" class="icon dlg-close" aria-label="Close brand kit"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
   <h2>Brand kit</h2>
   <p class="hint">New graphics start with these. Changing a color or typeface here also updates the graphics that use it.</p>
   <div class="f">Colors
