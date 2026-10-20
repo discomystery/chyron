@@ -3748,5 +3748,12 @@ if ('launchQueue' in window) {
 }
 
 new ResizeObserver(fitStage).observe($('#stageArea'));
-FONTS.forEach((f) => document.fonts.load(`${f.weight} 40px "${f.name}"`));
+// The built-in typefaces come from the stylesheet in index.html. A page still holding an older copy of it
+// fetches any it's missing, so new typefaces show up without waiting for that copy to expire.
+for (const f of FONTS) {
+  if (!document.querySelector(`link[href*="family=${f.name.replace(/ /g, '+')}"]`)) {
+    document.head.append(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: googleCss(f.name, f.weight) }));
+  }
+  document.fonts.load(`${f.weight} 40px "${f.name}"`);
+}
 load().then(() => requestAnimationFrame(tick));

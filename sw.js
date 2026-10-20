@@ -2,7 +2,7 @@
 // App files: try the network first so updates arrive, fall back to the saved copy.
 // Fonts and the speech engine's files: use the saved copy first, since they never change.
 // (The speech model itself is kept by transformers.js in its own cache.)
-const CACHE = 'chyron-v2';
+const CACHE = 'chyron-v3';
 const APP_FILES = [
   './',
   'index.html',
@@ -49,8 +49,10 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.origin !== self.location.origin) return;
+  // Ask the server each time rather than the browser's own cache, which GitHub Pages lets keep a file for
+  // ten minutes, so an update never arrives half old and half new.
   event.respondWith(
-    fetch(req)
+    fetch(req.mode === 'navigate' ? req.url : req, { cache: 'no-cache' })
       .then((res) => {
         if (res.ok) {
           const copy = res.clone();
