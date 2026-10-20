@@ -151,11 +151,10 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
   display: block;
   width: 100%;
   margin-bottom: 10px;
-  padding: 0 0 7px;
+  padding: 0 12px 8px;
   overflow: hidden;
   background: var(--raised);
   text-align: left;
-  text-indent: 10px;
   font-size: 13px;
 }
 .add button[data-add]:hover { border-color: var(--signal); transform: translateY(-1px); }
@@ -166,10 +165,9 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
   align-items: flex-start;
   justify-content: center;
   height: 52px;
-  margin-bottom: 7px;
+  margin: 0 -12px 7px;
   padding: 0 12px;
   background: #2c3446;
-  text-indent: 0;
   line-height: 1;
   transition: filter var(--ease);
 }
