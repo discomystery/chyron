@@ -1,7 +1,8 @@
 // Keeps Chyron working offline once installed.
 // App files: try the network first so updates arrive, fall back to the saved copy.
-// Fonts: use the saved copy first, since font files never change.
-const CACHE = 'chyron-v1';
+// Fonts and the speech engine's files: use the saved copy first, since they never change.
+// (The speech model itself is kept by transformers.js in its own cache.)
+const CACHE = 'chyron-v2';
 const APP_FILES = [
   './',
   'index.html',
@@ -9,6 +10,7 @@ const APP_FILES = [
   'app.js',
   'icons.js',
   'vendor/mediabunny.min.js',
+  'caption-worker.js',
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',
@@ -26,7 +28,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com', 'use.typekit.net', 'p.typekit.net'];
+const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com', 'use.typekit.net', 'p.typekit.net', 'cdn.jsdelivr.net'];
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;

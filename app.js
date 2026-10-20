@@ -115,12 +115,33 @@ function parseSubtitles(src) {
 // clips keeps them in sync. Older subtitles, or ones set to follow the timeline, use timeline time.
 const followsFootage = (o) => o.follow !== 'timeline' && o.source && segs.some((s) => s.m.name === o.source);
 
-function cueAt(o, t) {
-  if (!followsFootage(o)) return o.cues.find((c) => t >= c.start + o.offset && t < c.end + o.offset) || null;
-  const s = segs[segIndexAt(t)];
-  if (!s || s.m.name !== o.source || t < s.start || t >= s.start + s.len) return null;
-  const src = s.c.in + (t - s.start);
-  return o.cues.find((c) => src >= c.start + o.offset && src < c.end + o.offset) || null;
+// The line on screen at timeline time t, and the time on that line's own clock (footage or timeline).
+function cueHit(o, t) {
+  let at = t;
+  if (followsFootage(o)) {
+    const s = segs[segIndexAt(t)];
+    if (!s || s.m.name !== o.source || t < s.start || t >= s.start + s.len) return null;
+    at = s.c.in + (t - s.start);
+  }
+  at -= o.offset;
+  const cue = o.cues.find((c) => at >= c.start && at < c.end);
+  return cue ? { cue, at } : null;
+}
+const cueAt = (o, t) => cueHit(o, t)?.cue || null;
+
+// Word by word: the word being spoken is wrapped in *stars*, so it shows in the highlight color.
+// Lines whose words no longer match their timings (after editing) just show plainly.
+function cueText(o, t) {
+  const hit = cueHit(o, t);
+  if (!hit) return '';
+  const { cue, at } = hit;
+  if (!o.karaoke || !cue.words) return cue.text;
+  const words = cue.text.replace(/\*/g, '').split(/\s+/).filter(Boolean);
+  if (words.length !== cue.words.length) return cue.text;
+  let i = cue.words.findIndex(([, end]) => at < end);
+  if (i < 0) i = words.length - 1;
+  if (i > 0 && at < cue.words[i][0]) i--; // between words, keep the last one lit
+  return words.map((w, j) => (j === i ? `*${w}*` : w)).join(' ');
 }
 
 // Where each subtitle line lands on the timeline (a line can appear more than once, or not at all).
@@ -992,7 +1013,7 @@ function drawFrame(t, animate, paintBackground) {
     o._box = null;
     const end = endOf(o);
     if (t < o.start || t > end) continue;
-    const text = o.cues ? cueAt(o, t)?.text || '' : o.text;
+    const text = o.cues ? cueText(o, t) : o.text;
     const L = LAYOUTS[o.kind](o, o.upper ? text.toUpperCase() : text, o.x * W, o.y * H, o.width * W, u);
     o._box = L;
     let pin = 1, pout = 1;
@@ -1336,6 +1357,7 @@ function fillInspector() {
   $('#align').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === o.align));
   props.querySelector('[data-k="subFont"]').value = subFontName(o);
   if (o.cues) props.querySelector('[data-k="follow"]').value = followsFootage(o) ? 'footage' : 'timeline';
+  if (o.cues) props.querySelector('[data-k="karaoke"]').closest('label').hidden = !o.cues.some((c) => c.words);
   $('#subFontLabel').textContent = o.kind === 'quote' ? 'Attribution typeface' : 'Title typeface';
   syncChips();
   syncTabs();
@@ -1751,7 +1773,7 @@ function renderTimeline() {
     row.className = 'row';
     row.dataset.id = o.id;
     const name = document.createElement('span');
-    name.textContent = COVERS.has(o.kind) ? COVER_NAMES[o.kind] : o.text.split('\n')[0].replace(/\*/g, '') || PRESETS[o.type].name;
+    name.textContent = COVERS.has(o.kind) ? COVER_NAMES[o.kind] : o.auto ? 'Captions' : o.text.split('\n')[0].replace(/\*/g, '') || PRESETS[o.type].name;
     if (o.cues) name.textContent += ` (${o.cues.length})`;
     name.prepend(iconEl(TYPE_ICONS[o.type]));
     name.title = 'Tap to select, drag up or down to reorder';
@@ -2500,6 +2522,228 @@ function tick(ts) {
     $('#exportTime').textContent = `${Math.round(exportProgress * 100)}% done`;
   }
   requestAnimationFrame(tick);
+}
+
+/* ---------- auto captions ---------- */
+
+// Speech becomes captions on this device: each video's audio is decoded here, Whisper runs in a worker,
+// and the timed words become a captions layer that follows its footage like uploaded subtitles.
+const CAPTION_MODELS = { fast: 'onnx-community/whisper-base', accurate: 'onnx-community/whisper-small' };
+const captionDlg = $('#captionDlg');
+let captionPrefs = { language: '', quality: 'fast', look: 'lines', words: 6 };
+try {
+  captionPrefs = { ...captionPrefs, ...JSON.parse(localStorage.getItem('chyron-captions') || '{}') };
+} catch {}
+let captionWorker = null;
+let captioning = false;
+// Tests can swap in their own worker.
+window.makeCaptionWorker = () => new Worker('caption-worker.js', { type: 'module' });
+
+function showCaptionPrefs() {
+  $('#capLanguage').value = captionPrefs.language;
+  $('#capWords').value = captionPrefs.words;
+  for (const [id, k] of [['#capQuality', 'quality'], ['#capLook', 'look']]) {
+    $(id).querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === captionPrefs[k]));
+  }
+}
+function keepCaptionPrefs() {
+  try {
+    localStorage.setItem('chyron-captions', JSON.stringify(captionPrefs));
+  } catch {}
+}
+for (const [id, k] of [['#capQuality', 'quality'], ['#capLook', 'look']]) {
+  $(id).addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b || captioning) return;
+    captionPrefs[k] = b.dataset.v;
+    if (k === 'look') captionPrefs.words = b.dataset.v === 'words' ? 3 : 6;
+    showCaptionPrefs();
+    keepCaptionPrefs();
+  });
+}
+$('#capLanguage').onchange = (e) => {
+  captionPrefs.language = e.target.value;
+  keepCaptionPrefs();
+};
+$('#capWords').oninput = (e) => {
+  const v = parseInt(e.target.value, 10);
+  if (v >= 1 && v <= 12) captionPrefs.words = v;
+  keepCaptionPrefs();
+};
+$('#capWords').closest('.num').addEventListener('click', stepNumber);
+
+$('#addCaptions').onclick = () => {
+  if (!hasVideo) return toast('Add a video first, then make captions.');
+  showAddSheet(false);
+  showCaptionPrefs();
+  captionStatus('');
+  captionDlg.showModal();
+};
+$('#capCancel').onclick = () => {
+  if (captioning) stopCaptions();
+  captionDlg.close();
+};
+
+function captionStatus(msg, progress = null) {
+  $('#capStatus').hidden = !msg;
+  $('#capMsg').textContent = msg;
+  $('#capBar').hidden = progress === null;
+  $('#capBar').classList.toggle('busy', progress === -1);
+  $('#capBar i').style.width = progress > 0 ? `${progress * 100}%` : '';
+}
+
+function stopCaptions() {
+  if (captionWorker) captionWorker.terminate();
+  captionWorker = null;
+  captioning = false;
+  $('#capGo').disabled = false;
+}
+
+// A video's sound between two times, as 16 kHz mono, the way Whisper wants it.
+async function speechAudio(file, from, to) {
+  const input = new MB.Input({ formats: MB.ALL_FORMATS, source: new MB.BlobSource(file) });
+  try {
+    const track = await input.getPrimaryAudioTrack();
+    if (!track || !(await track.canDecode())) return null;
+    const rate = 16000, mix = new OfflineAudioContext(1, Math.max(1, Math.ceil((to - from) * rate)), rate);
+    for await (const part of new MB.AudioBufferSink(track).buffers(from, to)) {
+      const src = mix.createBufferSource();
+      src.buffer = part.buffer;
+      src.connect(mix.destination);
+      const at = part.timestamp - from;
+      if (at >= 0) src.start(at);
+      else src.start(0, -at);
+    }
+    return (await mix.startRendering()).getChannelData(0);
+  } finally {
+    input.dispose();
+  }
+}
+
+// Runs one video's audio through the worker; resolves with { words, chunks } in that audio's time.
+function transcribe(audio, onMessage) {
+  return new Promise((resolve, reject) => {
+    captionWorker = captionWorker || window.makeCaptionWorker();
+    captionWorker.onmessage = ({ data }) => {
+      if (data.type === 'done') resolve(data);
+      else if (data.type === 'error') reject(new Error(data.message));
+      else onMessage(data);
+    };
+    // A worker that fails to start usually couldn't fetch the speech library.
+    captionWorker.onerror = (e) => reject(new Error(e.message || 'Failed to load the speech library'));
+    captionWorker.postMessage({ audio, model: CAPTION_MODELS[captionPrefs.quality], language: captionPrefs.language }, [audio.buffer]);
+  });
+}
+
+// Whisper's words (or phrases, spread evenly over their words) → [{ text, start, end }].
+function timedWords({ words, chunks }, shift) {
+  const out = [];
+  for (const c of chunks) {
+    const start = c.start + shift, end = (c.end ?? c.start + 0.5) + shift;
+    const parts = c.text.trim().split(/\s+/).filter(Boolean);
+    if (words || parts.length < 2) {
+      if (parts.length) out.push({ text: parts.join(' '), start, end: Math.max(end, start + 0.05) });
+      continue;
+    }
+    const total = parts.reduce((n, w) => n + w.length + 1, 0);
+    let t = start;
+    for (const w of parts) {
+      const d = ((end - start) * (w.length + 1)) / total;
+      out.push({ text: w, start: t, end: t + d });
+      t += d;
+    }
+  }
+  return out;
+}
+
+// Groups words into caption lines: up to `max` words, breaking at pauses and sentence ends.
+function captionCues(words, max) {
+  const cues = [];
+  let group = [];
+  const flush = () => {
+    if (!group.length) return;
+    const text = group.map((w) => w.text).join(' ');
+    cues.push({ start: group[0].start, end: group[group.length - 1].end, text, words: group.map((w) => [w.start, w.end]) });
+    group = [];
+  };
+  for (const w of words) {
+    const last = group[group.length - 1];
+    if (last && (group.length >= max || w.start - last.end > 0.7 || (/[.?!]$/.test(last.text) && group.length > 1))) flush();
+    group.push(w);
+  }
+  flush();
+  // Keep each line up long enough to read, without running into the next.
+  cues.forEach((c, i) => {
+    const next = cues[i + 1];
+    c.end = Math.max(c.end, c.start + 0.6);
+    if (next) c.end = Math.min(c.end, next.start);
+  });
+  return cues.filter((c) => c.end > c.start);
+}
+
+$('#capGo').onclick = async () => {
+  if (captioning) return;
+  if (!MB) return captionStatus('Captions need a newer browser.');
+  captioning = true;
+  $('#capGo').disabled = true;
+  const made = [];
+  try {
+    // Each video file is heard once, over the stretch its clips use.
+    const files = new Map();
+    for (const s of segs) {
+      const r = files.get(s.m.name) || { m: s.m, from: Infinity, to: 0 };
+      r.from = Math.min(r.from, s.c.in);
+      r.to = Math.max(r.to, s.c.out);
+      files.set(s.m.name, r);
+    }
+    let n = 0;
+    for (const { m, from, to } of files.values()) {
+      n++;
+      const which = files.size > 1 ? ` (${n} of ${files.size})` : '';
+      captionStatus(`Getting the sound${which}…`, -1);
+      const audio = await speechAudio(m.file, from, to);
+      if (!captioning) return;
+      if (!audio) continue;
+      const started = performance.now();
+      const result = await transcribe(audio, (msg) => {
+        if (msg.type === 'download') {
+          const mb = (x) => Math.round(x / 1e6);
+          captionStatus(`Downloading the speech model, first time only: ${mb(msg.loaded)} of ${mb(msg.total)} MB`, msg.total ? msg.loaded / msg.total : -1);
+        } else if (msg.type === 'listening') {
+          captionStatus(`Listening${which}… this can take about as long as the video.`, -1);
+        }
+      });
+      if (!captioning) return;
+      const cues = captionCues(timedWords(result, from), captionPrefs.words);
+      if (!cues.length) continue;
+      made.push(addCaptionLayer(m.name, cues));
+      console.info(`Captions for ${m.name} took ${((performance.now() - started) / 1000).toFixed(1)} s`);
+    }
+  } catch (err) {
+    console.warn('Captions failed:', err);
+    const offline = /fetch|network|load/i.test(err.message);
+    captionStatus(offline ? 'Couldn’t download the speech model. Check the internet connection and try again; after the first time it works offline.' : `Captions stopped: ${err.message}`);
+    stopCaptions();
+    return;
+  }
+  stopCaptions();
+  if (!made.length) return captionStatus('No speech was found in this video.');
+  captionDlg.close();
+  renderTimeline();
+  select(made[0].id);
+  save();
+  const lines = made.reduce((n, o) => n + o.cues.length, 0);
+  toast(`${lines} captions added. Check them over: tap a line in the timeline to fix a word.`);
+};
+
+function addCaptionLayer(source, cues) {
+  const words = captionPrefs.look === 'words';
+  const look = words
+    ? { kind: 'text', size: 72, y: 0.6, upper: true, font: state.brand.head, karaoke: true }
+    : { karaoke: false };
+  const o = makeOverlay('subtitles', { cues, source, follow: 'footage', auto: true, ...look });
+  state.overlays.push(o);
+  return o;
 }
 
 /* ---------- platform safe zones ---------- */

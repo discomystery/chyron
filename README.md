@@ -14,6 +14,8 @@ Everything runs in your browser. Videos are never uploaded anywhere.
 
 **Subtitles:** add an SRT or VTT file and the lines follow the video they were made for, so they stay in sync when you trim, split or reorder clips. For subtitles made from the finished edit, set them to follow the timeline instead.
 
+**Auto captions:** Captions listens to the video and writes captions on your device, using OpenAI's Whisper speech model through [transformers.js](https://huggingface.co/docs/transformers.js). Nothing is uploaded. The first time, the model downloads once from Hugging Face (Fast about 80 MB, Accurate about 250 MB) and the speech library and engine from jsDelivr; after that it works offline. Pick the language (or let it detect), Lines or Word by word (the word being spoken lights up in the highlight color), and how many words per caption. Captions follow their footage like subtitles, and every line can be edited.
+
 **Safe zones:** pick TikTok, Reels or Shorts under Safe zones to shade, roughly, where each app's buttons and captions sit over a vertical video. They're only shown while editing, never exported.
 
 **Exporting several shapes:** Export lets you tick Vertical 9:16, Portrait 4:5, Square 1:1 and Wide 16:9 and makes one video of each, named by shape. Graphics keep their places in the frame and each clip stays centred on the same part of its picture.
@@ -24,4 +26,4 @@ Everything runs in your browser. Videos are never uploaded anywhere.
 
 **Reframing a clip:** select a video clip (the rest of its picture shows dimmed around the frame), then drag the video to move it in the frame and pinch (or scroll) to zoom. Changing it at another moment adds a keyframe there, shown as a diamond on the clip. Each keyframe either **jumps** (holds, then cuts to the new framing) or **glides** (moves smoothly from the keyframe before). Drag a diamond to retime its keyframe (it snaps to the clip's ends and to where graphics start or end); hold Option/Alt while dragging to copy it instead.
 
-Video export uses [Mediabunny](https://mediabunny.dev) (MPL-2.0), included unmodified in `vendor/`. Icons are from [Phosphor](https://phosphoricons.com) (MIT).
+Video export uses [Mediabunny](https://mediabunny.dev) (MPL-2.0), included unmodified in `vendor/`. Auto captions use [transformers.js](https://github.com/huggingface/transformers.js) (Apache-2.0, with ONNX Runtime Web, MIT), loaded from jsDelivr, and the MIT-licensed Whisper models. Icons are from [Phosphor](https://phosphoricons.com) (MIT).

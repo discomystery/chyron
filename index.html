@@ -78,6 +78,7 @@
       <button id="addImage" class="tile"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>Image</button>
       <button id="addLogo" class="tile"><svg class="ic" aria-hidden="true"><use href="#i-logo"/></svg>Logo</button>
       <button id="addSubs" class="tile" title="Add subtitles from an SRT file"><svg class="ic" aria-hidden="true"><use href="#i-subs"/></svg>Subtitles</button>
+      <button id="addCaptions" class="tile" title="Make captions from the speech, on this device"><svg class="ic" aria-hidden="true"><use href="#i-wave"/></svg>Captions</button>
     </div>
 
     <h2>Saved styles</h2>
@@ -147,6 +148,7 @@
           <option value="text">None, with a soft shadow</option>
         </select>
       </label>
+      <label class="check" data-group="text" data-subs="only"><input data-k="karaoke" type="checkbox"> Highlight each word as it’s spoken</label>
       <label class="f" data-group="text" data-subs="only">Subtitles follow
         <select data-k="follow">
           <option value="footage">The video they were made for</option>
@@ -345,6 +347,58 @@
     </div>
   </div>
   <div class="actions"><button type="button" id="brandDone" class="primary">Done</button></div>
+</dialog>
+
+<dialog id="captionDlg">
+  <h2>Auto captions</h2>
+  <p class="hint">Chyron listens to the video and writes captions, right here on this device. Nothing is uploaded. The first time, the speech model downloads once (Fast about 80 MB, Accurate about 250 MB); after that it works offline.</p>
+  <label class="f">Language
+    <select id="capLanguage">
+      <option value="">Detect automatically</option>
+      <option value="english">English</option>
+      <option value="spanish">Spanish</option>
+      <option value="french">French</option>
+      <option value="german">German</option>
+      <option value="italian">Italian</option>
+      <option value="portuguese">Portuguese</option>
+      <option value="dutch">Dutch</option>
+      <option value="polish">Polish</option>
+      <option value="ukrainian">Ukrainian</option>
+      <option value="russian">Russian</option>
+      <option value="turkish">Turkish</option>
+      <option value="arabic">Arabic</option>
+      <option value="hindi">Hindi</option>
+      <option value="chinese">Chinese</option>
+      <option value="japanese">Japanese</option>
+      <option value="korean">Korean</option>
+      <option value="vietnamese">Vietnamese</option>
+      <option value="indonesian">Indonesian</option>
+      <option value="tagalog">Tagalog</option>
+    </select>
+  </label>
+  <div class="f">Speed
+    <div class="seg" id="capQuality">
+      <button type="button" data-v="fast">Fast</button>
+      <button type="button" data-v="accurate">Accurate</button>
+    </div>
+  </div>
+  <div class="f">Look
+    <div class="seg" id="capLook">
+      <button type="button" data-v="lines">Lines</button>
+      <button type="button" data-v="words">Word by word</button>
+    </div>
+  </div>
+  <div class="f">Words per caption
+    <div class="num"><button type="button" data-step="-1" aria-label="Fewer words">−</button><label class="num-box"><input id="capWords" min="1" max="12" step="1" type="number" inputmode="numeric" aria-label="Words per caption"></label><button type="button" data-step="1" aria-label="More words">+</button></div>
+  </div>
+  <div class="cap-status" id="capStatus" hidden>
+    <p id="capMsg"></p>
+    <div class="progress" id="capBar"><i></i></div>
+  </div>
+  <div class="actions">
+    <button id="capCancel">Cancel</button>
+    <button id="capGo" class="primary">Make captions</button>
+  </div>
 </dialog>
 
 <dialog id="exportDlg">
