@@ -12,23 +12,26 @@ const FONTS = [
   { name: 'Oswald', weight: 700 },
   { name: 'Barlow Condensed', weight: 700 },
   { name: 'Newsreader', weight: 600 },
+  { name: 'Inter Tight', weight: 800 },
+  { name: 'Space Mono', weight: 700 },
 ];
-const DEFAULT_BRAND = { dark: '#111111', light: '#ffffff', main: '#1740e0', accent: '#ffd400', extra: '#e4262c', head: 'Anton', body: 'Archivo', logo: null };
+const DEFAULT_BRAND = { dark: '#111111', light: '#ffffff', main: '#1740e0', accent: '#ffd400', extra: '#e4262c', head: 'Inter Tight', body: 'Space Mono', logo: null, v: 2 };
 // Values starting with $ are filled in from the brand kit when a graphic is made.
 const BASE = {
   text: '', sub: '', width: 0.84, x: 0.08, y: 0.5, size: 56, align: 'left', upper: false, track: 0,
-  font: '$body', color: '$light', bg: '$dark', accent: '$accent', bgAlpha: 1, radius: 0, alpha: 1,
+  font: '$body', color: '$light', bg: '$dark', accent: '$accent', bgAlpha: 1, radius: 0, alpha: 1, look: 'classic', dot: false,
   anim: 'fade', out: 'fade', speed: 0.45, start: 0, end: 5, toEnd: true,
 };
 const PRESETS = {
-  headline: { name: 'Headline', kind: 'lines', text: 'Your headline goes here', font: '$head', size: 88, y: 0.62, upper: true, anim: 'wipe' },
-  label: { name: 'Label', kind: 'lines', text: 'Breaking', size: 38, y: 0.565, bg: '$main', upper: true, track: 0.06 },
-  lower: { name: 'Name bar', kind: 'lower', text: 'Maria Alvarez', sub: 'City council member, District 4', size: 54, y: 0.78, color: '$dark', bg: '$light', accent: '$main', anim: 'rise' },
-  quote: { name: 'Quote', kind: 'quote', text: 'We heard from hundreds of renters, and tonight we acted.', sub: 'Maria Alvarez', font: 'Newsreader', size: 60, y: 0.4 },
-  credit: { name: 'Source credit', kind: 'text', text: 'Source: City Clerk’s Office', size: 30, y: 0.93 },
-  text: { name: 'Plain text', kind: 'text', text: 'Add your text', y: 0.3 },
+  // The marker look: black on yellow highlighter strips, with tags in the brand's typewriter face.
+  headline: { name: 'Headline', kind: 'lines', look: 'marker', text: 'Your headline goes here', font: '$head', size: 84, y: 0.6, track: -0.02, color: '$dark', bg: '$accent', accent: '$dark', anim: 'marker' },
+  label: { name: 'Label', kind: 'lines', look: 'marker', text: '[ Update ]', size: 32, y: 0.579, upper: true, track: 0.04, anim: 'type' },
+  lower: { name: 'Name bar', kind: 'lower', look: 'marker', text: 'Maria Alvarez', sub: 'City council member, District 4', font: '$head', subFont: '$body', size: 54, y: 0.78, track: -0.01, color: '$dark', bg: '$accent', accent: '$dark', anim: 'marker' },
+  quote: { name: 'Quote', kind: 'quote', look: 'marker', text: 'We heard from hundreds of renters, and tonight we *acted*.', sub: 'Maria Alvarez', font: '$head', subFont: '$body', size: 58, y: 0.4, track: -0.01, anim: 'pop' },
+  credit: { name: 'Source credit', kind: 'lines', look: 'marker', text: 'Source: City Clerk’s Office', size: 28, y: 0.93, anim: 'type' },
+  text: { name: 'Plain text', kind: 'text', text: 'Add your text', font: '$head', y: 0.3 },
   image: { name: 'Image', kind: 'image', width: 0.4, x: 0.3, y: 0.3 },
-  subtitles: { name: 'Subtitles', kind: 'lines', size: 50, y: 0.72, align: 'center', anim: 'none', out: 'none', offset: 0 },
+  subtitles: { name: 'Subtitles', kind: 'lines', look: 'marker', font: '$head', size: 54, y: 0.72, align: 'center', color: '$dark', bg: '$accent', accent: '$dark', anim: 'none', out: 'none', offset: 0 },
   logo: { name: 'Logo', kind: 'image', width: 0.2, x: 0.74, y: 0.04, anim: 'none', out: 'none' },
   // Covers hide part of the video, such as another channel's captions.
   cover: { name: 'Cover', kind: 'solid', width: 1, x: 0, y: 0.72, h: 0.28, bg: '$dark', edges: 'top', feather: 0.55, blur: 0.5 },
@@ -89,7 +92,7 @@ function fmt(t) {
 /* ---------- graphics: creating ---------- */
 
 function resolveBrand(o) {
-  for (const k of ['font', 'color', 'bg', 'accent']) {
+  for (const k of ['font', 'subFont', 'color', 'bg', 'accent']) {
     if (typeof o[k] === 'string' && o[k][0] === '$') o[k] = state.brand[o[k].slice(1)];
   }
   return o;
@@ -242,6 +245,15 @@ function stepHistory(dir) {
 function normalise(s) {
   const out = { format: '9:16', fit: 'cover', clips: [], overlays: [], styles: [], layouts: [], fonts: [], assets: {}, ...s };
   out.brand = { ...DEFAULT_BRAND, ...s.brand };
+  // Projects from before the marker look still on the old default typefaces move to the new ones.
+  if (!(s.brand && s.brand.v >= 2)) {
+    if (out.brand.head === 'Anton' && out.brand.body === 'Archivo') {
+      // Quotes that took their attribution typeface from the brand keep the one they had.
+      for (const o of s.overlays || []) if (o.kind === 'quote' && !o.subFont) o.subFont = 'Archivo';
+      Object.assign(out.brand, { head: DEFAULT_BRAND.head, body: DEFAULT_BRAND.body });
+    }
+    out.brand.v = 2;
+  }
   state = out;
   out.overlays = out.overlays.map((o) => upgradeCover(resolveBrand({ ...BASE, out: 'fade', ...o, toEnd: o.toEnd ?? o.end >= 14.99 })));
   const ids = [...out.overlays, ...out.clips, ...out.styles, ...out.layouts].map((x) => x.id || 0);
@@ -602,7 +614,7 @@ async function addVideoFile(file) {
 // The second line of a name bar or quote can have its own typeface. Until one is picked, a name bar's
 // title uses the name's typeface and a quote's attribution uses the brand's text typeface.
 const subFontName = (o) => o.subFont || (o.kind === 'quote' ? state.brand.body : o.font);
-const subFontOf = (o) => ({ font: subFontName(o), track: o.kind === 'quote' ? 0 : o.track });
+const subFontOf = (o) => ({ font: subFontName(o), track: o.kind === 'quote' || o.look === 'marker' ? 0 : o.track });
 
 function setFont(o, px) {
   const f = allFonts().find((f) => f.name === o.font) || FONTS[1];
@@ -647,14 +659,111 @@ function wrapRich(text, maxW) {
   return rows;
 }
 
-function paintRow(row, x, y, o) {
+// Paints a row of words from x on baseline y, and returns where it ended. In the marker look a highlighted
+// word sits on its own box of the highlight color, spanning the row's box (top, h). `limit` stops after
+// that many characters (for typing on); `dry` only measures.
+function paintRow(row, x, y, o, top, h, limit = Infinity, dry = false) {
   for (const t of row.toks) {
+    if (limit <= 0) break;
     x += t.gap || 0;
-    ctx.fillStyle = t.hl ? o.accent : o.color;
-    ctx.fillText(t.t, x, y);
-    x += t.w;
+    const s = limit < t.t.length ? t.t.slice(0, limit) : t.t;
+    const w = s === t.t ? t.w : ctx.measureText(s).width;
+    limit -= s.length;
+    if (!dry) {
+      if (t.hl && o.look === 'marker' && top != null) {
+        const pad = h * 0.08;
+        ctx.fillStyle = o.accent;
+        ctx.fillRect(x - pad, top, w + 2 * pad, h);
+        ctx.fillStyle = readable(o.accent);
+      } else ctx.fillStyle = t.hl ? o.accent : o.color;
+      ctx.fillText(s, x, y);
+    }
+    x += w;
   }
+  return x;
 }
+
+const rowChars = (row) => row.toks.reduce((n, t) => n + t.t.length, 0);
+const easeOut = (p) => 1 - (1 - p) ** 3;
+const backOut = (p) => 1 + 2.7 * (p - 1) ** 3 + 1.7 * (p - 1) ** 2;
+
+// Text graphics are made of strips: a box with text on it (one per line, or a name bar's two bars).
+// Each strip has a place (x, y, w, h), box(w) to paint its box cut to width w, text(limit, dry) to paint
+// its text and return where it ended, and chars, its length. The fancier entrances work strip by strip:
+//  wipe: each strip is uncovered from the left, one after another;
+//  marker: each box sweeps across like a highlighter, and the text follows it;
+//  type: the text types on with a cursor, its box growing to fit;
+//  pop: each strip springs up from small.
+// Exits run the same in reverse; a marker exit clears the text, then pulls the box away to the right.
+function paintStrips(S, fx, o, fs) {
+  const n = S.length;
+  const type = fx && fx.type;
+  const stagger = (p, i) => clamp(p * (1 + 0.3 * (n - 1)) - 0.3 * i);
+  const cut = (s, w, fromRight) => {
+    ctx.beginPath();
+    ctx.rect(fromRight ? s.x + s.w - w : s.x, s.y, w, s.h + 1);
+    ctx.clip();
+  };
+  let left = type === 'type' ? Math.round(fx.p * S.reduce((a, s) => a + s.chars, 0)) : 0;
+  let cursorPlaced = false;
+  S.forEach((s, i) => {
+    ctx.save();
+    if (!fx) {
+      s.box(s.w);
+      s.text();
+    } else if (type === 'wipe') {
+      const p = stagger(easeOut(fx.p), i);
+      if (p > 0) {
+        cut(s, s.w * p);
+        s.box(s.w);
+        s.text();
+      }
+    } else if (type === 'marker') {
+      const p = stagger(fx.p, i);
+      const bp = easeOut(clamp(p / 0.65)), tp = easeOut(clamp((p - 0.35) / 0.65));
+      if (bp > 0) {
+        ctx.save();
+        cut(s, s.w * bp, fx.out);
+        s.box(s.w);
+        ctx.restore();
+        if (tp > 0) {
+          cut(s, s.w * tp, fx.out);
+          s.text();
+        }
+      }
+    } else if (type === 'pop') {
+      const p = stagger(fx.p, i);
+      if (p > 0) {
+        const k = 0.4 + 0.6 * backOut(p), cx = s.x + s.w / 2, cy = s.y + s.h / 2;
+        ctx.globalAlpha *= clamp(p * 2.5);
+        ctx.translate(cx, cy);
+        ctx.scale(k, k);
+        ctx.translate(-cx, -cy);
+        s.box(s.w);
+        s.text();
+      }
+    } else if (type === 'type') {
+      const k = Math.min(left, s.chars);
+      left -= k;
+      const full = k >= s.chars;
+      const cursor = !cursorPlaced && (!full || i === n - 1);
+      if (cursor) cursorPlaced = true;
+      if (k > 0 || cursor) {
+        const end = s.text(k, true);
+        const cw = fs * 0.42;
+        const w = Math.min(s.w, end - s.x + s.padR) + (cursor ? cw + fs * 0.12 : 0);
+        s.box(full && !cursor ? s.w : w);
+        s.text(k);
+        if (cursor) {
+          ctx.fillStyle = s.cursor || o.accent;
+          ctx.fillRect(end + fs * 0.06, s.y + (s.h - fs * 0.8) / 2, cw, fs * 0.8);
+        }
+      }
+    }
+    ctx.restore();
+  });
+}
+const STRIP_FX = new Set(['wipe', 'marker', 'type', 'pop']);
 
 function fillBox(o, x, y, w, h, r) {
   const a = ctx.globalAlpha;
@@ -683,33 +792,38 @@ const LAYOUTS = {
     const fs = o.size * u;
     const padX = fs * 0.28;
     const lh = fs * 1.24;
+    // An optional dot (in the brand's extra color) leads the first line, like a live marker.
+    const lead = o.dot ? fs * 0.62 : 0;
     setFont(o, fs);
     const cap = capHeight();
     const trail = (o.track || 0) * fs;
-    const rows = wrapRich(text, bw - 2 * padX).map((row, i) => {
-      const w = row.w - trail + 2 * padX;
-      return { row, w, x: alignX(o, bx, bw, w), y: by + i * lh };
+    const rows = wrapRich(text, bw - 2 * padX - lead).map((row, i) => {
+      const w = row.w - trail + 2 * padX + (i ? 0 : lead);
+      return { row, w, x: alignX(o, bx, bw, w), y: by + i * lh, lead: i ? 0 : lead };
     });
     const live = rows.filter((r) => r.row.toks.length);
     const ix = Math.min(bx + bw, ...live.map((r) => r.x));
     const iw = Math.max(0, Math.max(ix, ...live.map((r) => r.x + r.w)) - ix);
     // Solid square boxes overlap by a pixel so no seam shows between lines.
     const overlap = o.bgAlpha === 1 && !o.radius ? 1 : 0;
-    return {
-      x: bx, y: by, w: bw, h: rows.length * lh, ix, iw, staggered: true,
-      paint(p) {
-        setFont(o, fs);
-        live.forEach((r, i) => {
-          const rp = clamp(p * (1 + 0.3 * (live.length - 1)) - 0.3 * i);
-          if (rp <= 0) return;
-          ctx.save();
+    const strips = live.map((r) => ({
+      x: r.x, y: r.y, w: r.w, h: lh, padR: padX - trail, chars: rowChars(r.row),
+      box: (w) => fillBox(o, r.x, r.y, w, lh + overlap, (o.radius * lh) / 2),
+      text(limit, dry) {
+        if (r.lead && !dry) {
+          ctx.fillStyle = state.brand.extra;
           ctx.beginPath();
-          ctx.rect(r.x, r.y, r.w * rp, lh + 1);
-          ctx.clip();
-          fillBox(o, r.x, r.y, r.w, lh + overlap, (o.radius * lh) / 2);
-          paintRow(r.row, r.x + padX, r.y + (lh + cap) / 2, o);
-          ctx.restore();
-        });
+          ctx.arc(r.x + padX + fs * 0.2, r.y + lh / 2, fs * 0.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        return paintRow(r.row, r.x + padX + r.lead, r.y + (lh + cap) / 2, o, r.y, lh + overlap, limit, dry);
+      },
+    }));
+    return {
+      x: bx, y: by, w: bw, h: rows.length * lh, ix, iw, handles: STRIP_FX,
+      paint(fx) {
+        setFont(o, fs);
+        paintStrips(strips, fx, o, fs);
       },
     };
   },
@@ -717,9 +831,12 @@ const LAYOUTS = {
   // Name on one box, title on an accent strip underneath.
   lower(o, text, bx, by, bw, u) {
     text = text.replace(/\*/g, '');
-    const sub = o.upper ? o.sub.toUpperCase() : o.sub;
+    // The marker look has no side bar, and starts the title with // in the name bar's color.
+    const marker = o.look === 'marker';
+    const pre = marker && o.sub ? '// ' : '';
+    const sub = pre + (o.upper ? o.sub.toUpperCase() : o.sub);
     const measure = (fs) => {
-      const padX = fs * 0.34, bar = fs * 0.16, subFs = fs * 0.54;
+      const padX = fs * 0.34, bar = marker ? 0 : fs * 0.16, subFs = fs * 0.54;
       setFont(o, fs);
       const w1 = ctx.measureText(text).width + 2 * padX;
       const cap1 = capHeight();
@@ -733,35 +850,66 @@ const LAYOUTS = {
     const h1 = m.fs * 1.36, h2 = sub ? m.subFs * 1.9 : 0;
     const x = alignX(o, bx, bw, m.w);
     const flip = o.align === 'right';
+    const left = (w) => (flip ? x + m.w - m.bar - w : x + m.bar);
+    const barX = flip ? x + m.w - m.bar : x;
+    // Each bar's strip takes in its stretch of the side bar, and its box is cut to the width asked for.
+    const strip = (y, h, w, paintBox, font, color, line, at) => {
+      const sx = Math.min(barX, left(w)), sw = w + m.bar;
+      return {
+        x: sx, y, w: sw, h, padR: m.padX, chars: line.length, cursor: font === o ? o.accent : o.bg,
+        box(cw) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(sx, y - 1, cw, h + 2);
+          ctx.clip();
+          ctx.fillStyle = o.accent;
+          ctx.fillRect(barX, y, m.bar, h);
+          paintBox(left(w), y, w, h);
+          ctx.restore();
+        },
+        text(limit = Infinity, dry) {
+          setFont(font, font === o ? m.fs : m.subFs);
+          const s = line.slice(0, limit), tx = left(w) + m.padX;
+          if (!dry) {
+            const p = Math.min(pre.length, s.length);
+            ctx.fillStyle = o.bg;
+            if (font !== o && p) ctx.fillText(s.slice(0, p), tx, at);
+            ctx.fillStyle = color;
+            ctx.fillText(s.slice(font !== o ? p : 0), tx + (font !== o && p ? ctx.measureText(s.slice(0, p)).width : 0), at);
+          }
+          return tx + ctx.measureText(s).width;
+        },
+      };
+    };
+    const strips = [strip(by, h1, m.w1, (bx2, y, w, h) => fillBox(o, bx2, y, w, h, 0), o, o.color, text, by + (h1 + m.cap1) / 2)];
+    if (sub) {
+      const paintSub = (bx2, y, w, h) => {
+        ctx.fillStyle = o.accent;
+        ctx.fillRect(bx2, y - 1, w, h + 1);
+      };
+      strips.push(strip(by + h1, h2, m.w2, paintSub, subFontOf(o), readable(o.accent), sub, by + h1 + (h2 + m.cap2) / 2));
+    }
     return {
-      x: bx, y: by, w: bw, h: h1 + h2, ix: x, iw: m.w,
-      paint() {
-        const left = (w) => (flip ? x + m.w - m.bar - w : x + m.bar);
-        ctx.fillStyle = o.accent;
-        ctx.fillRect(flip ? x + m.w - m.bar : x, by, m.bar, h1 + h2);
-        fillBox(o, left(m.w1), by, m.w1, h1, 0);
-        setFont(o, m.fs);
-        ctx.fillStyle = o.color;
-        ctx.fillText(text, left(m.w1) + m.padX, by + (h1 + m.cap1) / 2);
-        if (!sub) return;
-        ctx.fillStyle = o.accent;
-        ctx.fillRect(left(m.w2), by + h1 - 1, m.w2, h2 + 1);
-        setFont(subFontOf(o), m.subFs);
-        ctx.fillStyle = readable(o.accent);
-        ctx.fillText(sub, left(m.w2) + m.padX, by + h1 + (h2 + m.cap2) / 2);
+      x: bx, y: by, w: bw, h: h1 + h2, ix: x, iw: m.w, handles: STRIP_FX,
+      paint(fx) {
+        paintStrips(strips, fx, o, m.fs);
       },
     };
   },
 
   // A full-width panel with an accent rule, the quote, and who said it.
   quote(o, text, bx, by, bw, u) {
+    // The marker look puts the accent rule along the top and who said it above the quote, as a tag.
+    const marker = o.look === 'marker';
     const fs = o.size * u;
     const pad = fs * 0.62, bar = fs * 0.16, lh = fs * 1.26, subFs = fs * 0.5;
-    const inner = bw - bar - 2 * pad;
+    const inner = bw - (marker ? 0 : bar) - 2 * pad;
     setFont(o, fs);
     const rows = wrapRich(`“${text.replace(/^["“]|["”]$/g, '')}”`, inner);
-    const subH = o.sub ? subFs * 2.2 : 0;
-    const h = pad * 0.8 + rows.length * lh + subH + pad * 0.8;
+    const tag = marker && o.sub ? subFs * 2 : 0;
+    const subH = o.sub && !marker ? subFs * 2.2 : 0;
+    const top = (marker ? bar : 0) + pad * 0.8 + tag;
+    const h = top + rows.length * lh + subH + pad * 0.8;
     const r = o.radius * fs * 0.6;
     return {
       x: bx, y: by, w: bw, h, ix: bx, iw: bw,
@@ -772,12 +920,21 @@ const LAYOUTS = {
         ctx.clip();
         fillBox(o, bx, by, bw, h, 0);
         ctx.fillStyle = o.accent;
-        ctx.fillRect(bx, by, bar, h);
+        if (marker) ctx.fillRect(bx, by, bw, bar);
+        else ctx.fillRect(bx, by, bar, h);
         ctx.restore();
+        const tx = bx + (marker ? 0 : bar) + pad;
+        if (tag) {
+          setFont(subFontOf(o), subFs);
+          ctx.fillStyle = o.accent;
+          ctx.fillText(`> ${o.sub}`.toUpperCase(), tx, by + bar + pad * 0.8 + subFs * 0.95);
+        }
         setFont(o, fs);
-        const tx = bx + bar + pad;
-        rows.forEach((row, i) => paintRow(row, alignX(o, tx, inner, row.w), by + pad * 0.8 + i * lh + fs * 0.92, o));
-        if (!o.sub) return;
+        rows.forEach((row, i) => {
+          const y = by + top + i * lh;
+          paintRow(row, alignX(o, tx, inner, row.w), y + fs * 0.92, o, y + fs * 0.02, fs * 1.12);
+        });
+        if (!o.sub || marker) return;
         setFont(subFontOf(o), subFs);
         ctx.fillStyle = o.accent;
         const who = `— ${o.sub}`;
@@ -919,16 +1076,32 @@ function softenEdges(b, w, h, soft, edges) {
 }
 
 // Entrance and exit effects; p runs 0 (hidden) to 1 (fully shown).
-function applyEffect(type, p, L, u) {
+// Graphics drawn in strips do wipe, marker, type and pop themselves (see paintStrips); for the
+// others, those uncover the whole graphic from the left or spring it up.
+function applyEffect(type, p, L, u, out) {
   if (p >= 1) return;
-  if (type === 'fade' || type === 'rise') ctx.globalAlpha *= p;
-  if (type === 'rise') ctx.translate(0, (1 - p) * 44 * u);
-  if (type === 'slide') ctx.translate(-(1 - p) * (L.ix + L.iw + 4), 0);
-  if (type === 'wipe' && !L.staggered) {
+  const e = easeOut(p);
+  if (type === 'fade' || type === 'rise') ctx.globalAlpha *= e;
+  if (type === 'rise') ctx.translate(0, (1 - e) * 44 * u);
+  if (type === 'slide') ctx.translate(-(1 - e) * (L.ix + L.iw + 4), 0);
+  if (type === 'wipe' || type === 'marker' || type === 'type') {
     ctx.beginPath();
-    ctx.rect(L.ix, L.y, L.iw * p, L.h);
+    ctx.rect(out && type === 'marker' ? L.ix + L.iw * (1 - e) : L.ix, L.y, L.iw * e, L.h);
     ctx.clip();
   }
+  if (type === 'pop') {
+    const k = 0.4 + 0.6 * backOut(p), cx = L.ix + L.iw / 2, cy = L.y + L.h / 2;
+    ctx.globalAlpha *= clamp(p * 2.5);
+    ctx.translate(cx, cy);
+    ctx.scale(k, k);
+    ctx.translate(-cx, -cy);
+  }
+}
+
+// How long an entrance or exit takes. Typing goes at a steady pace, so it depends on the length.
+function effectTime(o, type, text, out) {
+  if (type === 'type') return Math.max(o.speed, text.replace(/[\s*]/g, '').length * 0.035 * (o.speed / 0.45)) * (out ? 0.5 : 1);
+  return o.speed * (out ? 0.6 : 1) * (type === 'marker' ? 1.5 : type === 'pop' ? 1.3 : 1);
 }
 
 /* ---------- framing: where each clip sits in the frame ---------- */
@@ -1031,13 +1204,18 @@ function drawFrame(t, animate, paintBackground) {
     o._box = L;
     let pin = 1, pout = 1;
     if (animate) {
-      if (o.anim !== 'none') pin = 1 - (1 - clamp((t - o.start) / o.speed)) ** 3;
-      if (o.out !== 'none' && end < duration - 0.05) pout = 1 - (1 - clamp((end - t) / (o.speed * 0.6))) ** 3;
+      const all = o.kind === 'lower' ? text + o.sub : text;
+      if (o.anim !== 'none') pin = clamp((t - o.start) / effectTime(o, o.anim, all, false));
+      if (o.out !== 'none' && end < duration - 0.05) pout = clamp((end - t) / effectTime(o, o.out, all, true));
     }
     ctx.save();
-    applyEffect(o.anim, pin, L, u);
-    applyEffect(o.out, pout, L, u);
-    L.paint(Math.min(o.anim === 'wipe' ? pin : 1, o.out === 'wipe' ? pout : 1));
+    let fx = null;
+    for (const [type, p, out] of [[o.anim, pin, false], [o.out, pout, true]]) {
+      if (p >= 1) continue;
+      if (L.handles && L.handles.has(type)) fx = fx || { type, p, out };
+      else applyEffect(type, p, L, u, out);
+    }
+    L.paint(fx);
     ctx.restore();
   }
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
@@ -3116,7 +3294,7 @@ $('#capGo').onclick = async () => {
 function addCaptionLayer(source, cues) {
   const words = captionPrefs.look === 'words';
   const look = words
-    ? { kind: 'text', size: 72, y: 0.6, upper: true, font: state.brand.head, karaoke: true }
+    ? { size: 64, y: 0.6, karaoke: true }
     : { karaoke: false };
   const o = makeOverlay('subtitles', { cues, source, follow: 'footage', auto: true, ...look });
   state.overlays.push(o);

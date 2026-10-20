@@ -6,7 +6,7 @@
 <title>Chyron — news graphics for video</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wdth,wght@62..125,400..800&family=Barlow+Condensed:wght@700&family=Newsreader:opsz,wght@6..72,600&family=Oswald:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wdth,wght@62..125,400..800&family=Barlow+Condensed:wght@700&family=Inter+Tight:wght@800&family=Space+Mono:wght@700&family=Newsreader:opsz,wght@6..72,600&family=Oswald:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
@@ -169,6 +169,10 @@
           <option value="blur">Blur</option>
         </select></label>
       <label class="f" data-group="style" data-for="lines lower quote text"><span class="w">Typeface</span><select data-k="font" data-chips="font"></select></label>
+      <label class="f" data-group="style" data-for="lines lower quote"><span class="w">Look</span><select data-k="look" aria-label="Look">
+        <option value="marker">Marker</option>
+        <option value="classic">Classic</option>
+      </select></label>
       <label class="f" data-group="style" data-for="lower quote"><span class="w mini" id="subFontLabel">Title typeface</span><select data-k="subFont" data-chips="font" aria-label="Second line typeface"></select></label>
       <div class="f cued" data-group="style" data-for="lines lower quote text"><span class="w">Text size</span><span class="fi fi-size" title="Text size" aria-hidden="true"><small>A</small>A</span>
         <div class="num"><button type="button" data-step="-2" aria-label="Smaller">−</button><label class="num-box"><input data-k="size" min="18" max="220" step="1" type="number" inputmode="numeric" aria-label="Text size"></label><button type="button" data-step="2" aria-label="Bigger">+</button></div>
@@ -199,6 +203,7 @@
         <div class="place" id="place" role="group" aria-label="Place on screen"></div>
       </div>
       <label class="check caps" data-group="style" data-for="lines lower quote text" title="All capitals"><input data-k="upper" type="checkbox"> <span class="w">All capitals</span><b class="caps-ic" aria-hidden="true">AA</b></label>
+      <label class="check" data-group="style" data-for="lines"><input data-k="dot" type="checkbox"> Dot before the text</label>
 
       <div class="f" data-group="color" data-for="lines lower quote text solid"><span class="w">Colors</span>
         <div class="looks" id="looks" data-for="lines lower quote text solid"></div>
@@ -234,6 +239,9 @@
                 <option value="rise">Rise up</option>
                 <option value="wipe">Wipe across</option>
                 <option value="slide">Slide in</option>
+                <option value="marker">Highlighter</option>
+                <option value="type">Typewriter</option>
+                <option value="pop">Pop in</option>
               </select>
             </label>
             <label class="move"><span class="w">Exit</span><span class="fi fi-txt" aria-hidden="true">Out</span>
@@ -243,6 +251,9 @@
                 <option value="rise">Drop down</option>
                 <option value="wipe">Wipe away</option>
                 <option value="slide">Slide out</option>
+                <option value="marker">Highlighter off</option>
+                <option value="type">Backspace</option>
+                <option value="pop">Pop out</option>
               </select>
             </label>
           </div>

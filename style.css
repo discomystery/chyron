@@ -776,6 +776,8 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   .chips button { flex: none; height: 40px; padding: 0 13px; font-size: 16px; }
   .chips button.icon { width: 44px; height: 44px; padding: 0; }
   .chips button.icon .ic { width: 20px; height: 20px; }
+  [data-chips="anim"] + .chips { gap: 4px; }
+  [data-chips="anim"] + .chips button.icon { width: 40px; }
   .chips button.on { background: var(--signal); border-color: var(--signal); color: #fff; }
   [data-chips="font"] + .chips button.on { background: #1d2a55; border-color: var(--signal); box-shadow: 0 0 0 1px var(--signal); color: var(--ink); }
 
