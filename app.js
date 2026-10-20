@@ -2528,11 +2528,11 @@ function tick(ts) {
 
 // Speech becomes captions on this device: each video's audio is decoded here, Whisper runs in a worker,
 // and the timed words become a captions layer that follows its footage like uploaded subtitles.
-const CAPTION_MODELS = { fast: 'onnx-community/whisper-base', accurate: 'onnx-community/whisper-small' };
 const captionDlg = $('#captionDlg');
-let captionPrefs = { language: '', quality: 'fast', look: 'lines', words: 6 };
+let captionPrefs = { quality: 'accurate', look: 'lines', words: 6 };
 try {
-  captionPrefs = { ...captionPrefs, ...JSON.parse(localStorage.getItem('chyron-captions') || '{}') };
+  const kept = JSON.parse(localStorage.getItem('chyron-captions') || '{}');
+  captionPrefs = { ...captionPrefs, look: kept.look || captionPrefs.look, words: kept.words || captionPrefs.words, quality: kept.v2 ? kept.quality : 'accurate' };
 } catch {}
 let captionWorker = null;
 let captioning = false;
@@ -2540,7 +2540,6 @@ let captioning = false;
 window.makeCaptionWorker = () => new Worker('caption-worker.js', { type: 'module' });
 
 function showCaptionPrefs() {
-  $('#capLanguage').value = captionPrefs.language;
   $('#capWords').value = captionPrefs.words;
   for (const [id, k] of [['#capQuality', 'quality'], ['#capLook', 'look']]) {
     $(id).querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === captionPrefs[k]));
@@ -2548,7 +2547,7 @@ function showCaptionPrefs() {
 }
 function keepCaptionPrefs() {
   try {
-    localStorage.setItem('chyron-captions', JSON.stringify(captionPrefs));
+    localStorage.setItem('chyron-captions', JSON.stringify({ ...captionPrefs, v2: true }));
   } catch {}
 }
 for (const [id, k] of [['#capQuality', 'quality'], ['#capLook', 'look']]) {
@@ -2561,10 +2560,6 @@ for (const [id, k] of [['#capQuality', 'quality'], ['#capLook', 'look']]) {
     keepCaptionPrefs();
   });
 }
-$('#capLanguage').onchange = (e) => {
-  captionPrefs.language = e.target.value;
-  keepCaptionPrefs();
-};
 $('#capWords').oninput = (e) => {
   const v = parseInt(e.target.value, 10);
   if (v >= 1 && v <= 12) captionPrefs.words = v;
@@ -2631,7 +2626,7 @@ function transcribe(audio, onMessage) {
     };
     // A worker that fails to start usually couldn't fetch the speech library.
     captionWorker.onerror = (e) => reject(new Error(e.message || 'Failed to load the speech library'));
-    captionWorker.postMessage({ audio, model: CAPTION_MODELS[captionPrefs.quality], language: captionPrefs.language }, [audio.buffer]);
+    captionWorker.postMessage({ audio, quality: captionPrefs.quality }, [audio.buffer]);
   });
 }
 

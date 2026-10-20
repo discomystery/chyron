@@ -14,7 +14,7 @@ Everything runs in your browser. Videos are never uploaded anywhere.
 
 **Subtitles:** add an SRT or VTT file and the lines follow the video they were made for, so they stay in sync when you trim, split or reorder clips. For subtitles made from the finished edit, set them to follow the timeline instead.
 
-**Auto captions:** Captions listens to the video and writes captions on your device, using OpenAI's Whisper speech model through [transformers.js](https://huggingface.co/docs/transformers.js). Nothing is uploaded. The first time, the model downloads once from Hugging Face (Fast about 80 MB, Accurate about 250 MB) and the speech library and engine from jsDelivr; after that it works offline. Pick the language (or let it detect), Lines or Word by word (the word being spoken lights up in the highlight color), and how many words per caption. Captions follow their footage like subtitles, and every line can be edited.
+**Auto captions:** Captions listens to the English speech in the video and writes captions on your device, using OpenAI's English-only Whisper models through [transformers.js](https://huggingface.co/docs/transformers.js). The audio is never uploaded. The first time, the model downloads once from Hugging Face (Accurate, the default, about 250 MB; Fast about 80 MB) and the speech library and engine from jsDelivr; after that it works offline. Pick Lines or Word by word (the word being spoken lights up in the highlight color), and how many words per caption. Captions follow their footage like subtitles, and every line can be edited.
 
 **Safe zones:** pick TikTok, Reels or Shorts under Safe zones to shade, roughly, where each app's buttons and captions sit over a vertical video. They're only shown while editing, never exported.
 

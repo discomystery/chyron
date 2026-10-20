@@ -351,35 +351,11 @@
 
 <dialog id="captionDlg">
   <h2>Auto captions</h2>
-  <p class="hint">Chyron listens to the video and writes captions, right here on this device. Nothing is uploaded. The first time, the speech model downloads once (Fast about 80 MB, Accurate about 250 MB); after that it works offline.</p>
-  <label class="f">Language
-    <select id="capLanguage">
-      <option value="">Detect automatically</option>
-      <option value="english">English</option>
-      <option value="spanish">Spanish</option>
-      <option value="french">French</option>
-      <option value="german">German</option>
-      <option value="italian">Italian</option>
-      <option value="portuguese">Portuguese</option>
-      <option value="dutch">Dutch</option>
-      <option value="polish">Polish</option>
-      <option value="ukrainian">Ukrainian</option>
-      <option value="russian">Russian</option>
-      <option value="turkish">Turkish</option>
-      <option value="arabic">Arabic</option>
-      <option value="hindi">Hindi</option>
-      <option value="chinese">Chinese</option>
-      <option value="japanese">Japanese</option>
-      <option value="korean">Korean</option>
-      <option value="vietnamese">Vietnamese</option>
-      <option value="indonesian">Indonesian</option>
-      <option value="tagalog">Tagalog</option>
-    </select>
-  </label>
-  <div class="f">Speed
+  <p class="hint">Chyron listens to the English speech in the video and writes captions, right here on this device. The audio is never uploaded. The first time, the speech model downloads once (Accurate about 250 MB, Fast about 80 MB); after that it works offline.</p>
+  <div class="f">Quality
     <div class="seg" id="capQuality">
-      <button type="button" data-v="fast">Fast</button>
       <button type="button" data-v="accurate">Accurate</button>
+      <button type="button" data-v="fast">Fast</button>
     </div>
   </div>
   <div class="f">Look

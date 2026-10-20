@@ -17,9 +17,38 @@ async function hasWebGPU() {
   }
 }
 
+// English-only Whisper models, in order of preference; the second is the same model from an older export.
+const MODELS = {
+  fast: ['onnx-community/whisper-base.en', 'Xenova/whisper-base.en'],
+  accurate: ['onnx-community/whisper-small.en', 'Xenova/whisper-small.en'],
+};
+
+// Half-precision on the graphics chip keeps the encoder accurate at half the download, where supported.
+async function gpuFeatures() {
+  try {
+    const adapter = navigator.gpu && (await navigator.gpu.requestAdapter());
+    return adapter ? { f16: adapter.features.has('shader-f16') } : null;
+  } catch {
+    return null;
+  }
+}
+
+async function loadAny(quality) {
+  let last;
+  for (const model of MODELS[quality] || MODELS.accurate) {
+    try {
+      return await load(model);
+    } catch (err) {
+      last = err;
+      console.warn(`Could not load ${model}:`, err);
+    }
+  }
+  throw last;
+}
+
 async function load(model) {
-  const gpu = await hasWebGPU();
-  const key = `${model}|${gpu}`;
+  const gpu = await gpuFeatures();
+  const key = `${model}|${!!gpu}`;
   if (asr && loadedKey === key) return;
   asr = null;
   // Report download progress across all the model's files together.
@@ -36,7 +65,7 @@ async function load(model) {
     postMessage({ type: 'download', loaded, total });
   };
   const options = gpu
-    ? { device: 'webgpu', dtype: { encoder_model: 'fp32', decoder_model_merged: 'q4' }, progress_callback }
+    ? { device: 'webgpu', dtype: { encoder_model: gpu.f16 ? 'fp16' : 'fp32', decoder_model_merged: 'q4' }, progress_callback }
     : { device: 'wasm', dtype: 'q8', progress_callback };
   try {
     asr = await pipeline('automatic-speech-recognition', model, options);
@@ -49,11 +78,12 @@ async function load(model) {
 }
 
 self.onmessage = async ({ data }) => {
-  const { audio, model, language } = data;
+  const { audio, quality } = data;
   try {
-    await load(model);
+    await loadAny(quality);
     postMessage({ type: 'listening' });
-    const options = { chunk_length_s: 30, stride_length_s: 5, task: 'transcribe', language: language || null };
+    // English-only models take no language or task settings.
+    const options = { chunk_length_s: 30, stride_length_s: 5 };
     let out, words = true;
     try {
       out = await asr(audio, { ...options, return_timestamps: 'word' });
