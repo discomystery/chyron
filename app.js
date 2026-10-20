@@ -31,7 +31,7 @@ const PRESETS = {
   subtitles: { name: 'Subtitles', kind: 'lines', size: 50, y: 0.72, align: 'center', anim: 'none', out: 'none', offset: 0 },
   logo: { name: 'Logo', kind: 'image', width: 0.2, x: 0.74, y: 0.04, anim: 'none', out: 'none' },
   // Covers hide part of the video, such as another channel's captions.
-  cover: { name: 'Cover', kind: 'gradient', width: 1, x: 0, y: 0.72, h: 0.28, bg: '$dark', dir: 'bottom', fade: 0.55, blur: 0.5 },
+  cover: { name: 'Cover', kind: 'gradient', width: 1, x: 0, y: 0.72, h: 0.28, bg: '$dark', dir: 'bottom', fade: 0.55, blur: 0.5, feather: 0.35 },
 };
 const COVERS = new Set(['solid', 'gradient', 'blur']);
 const COVER_NAMES = { solid: 'Solid cover', gradient: 'Gradient cover', blur: 'Blur' };
@@ -761,7 +761,7 @@ function coverLayout(o, text, bx, by, bw, u) {
       ctx.beginPath();
       ctx.roundRect(bx, by, bw, bh, (o.radius * Math.min(bw, bh)) / 2);
       ctx.clip();
-      if (o.kind === 'blur') return blurRegion(bx, by, bw, bh, (3 + o.blur * 45) * u);
+      if (o.kind === 'blur') return blurRegion(bx, by, bw, bh, (3 + o.blur * 45) * u, o.feather || 0);
       ctx.globalAlpha *= o.bgAlpha;
       if (o.kind === 'solid') ctx.fillStyle = o.bg;
       else {
@@ -786,27 +786,52 @@ function withAlpha(hex, a) {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 }
 
-// Blurs what has been drawn so far inside a box. Browsers without canvas filters (older Safari)
-// get a soft blur from shrinking the area and stretching it back.
-let blurScratch;
-function blurRegion(x, y, w, h, r) {
+// Blurs what has been drawn so far inside a box, optionally fading the blur out towards the edges
+// so it blends into the picture around it. Browsers without canvas filters (older Safari) get a
+// soft blur from shrinking the area and stretching it back.
+let blurBox, blurSmall;
+function blurRegion(x, y, w, h, r, feather) {
   const W = canvas.width, H = canvas.height;
-  const sx = clamp(x - r * 2, 0, W), sy = clamp(y - r * 2, 0, H);
-  const sw = clamp(x + w + r * 2, 0, W) - sx, sh = clamp(y + h + r * 2, 0, H) - sy;
+  const bw = Math.ceil(w), bh = Math.ceil(h);
+  if (bw < 1 || bh < 1) return;
+  // Take a margin around the box so the blur near its edges draws on real picture.
+  const m = r * 2;
+  const sx = clamp(x - m, 0, W), sy = clamp(y - m, 0, H);
+  const sw = clamp(x + w + m, 0, W) - sx, sh = clamp(y + h + m, 0, H) - sy;
   if (sw < 1 || sh < 1) return;
-  if ('filter' in ctx) {
-    ctx.filter = `blur(${r}px)`;
-    ctx.drawImage(ctx.canvas, sx, sy, sw, sh, sx, sy, sw, sh);
-    ctx.filter = 'none';
-    return;
+  blurBox = blurBox || document.createElement('canvas');
+  blurBox.width = bw;
+  blurBox.height = bh;
+  const b = blurBox.getContext('2d');
+  if ('filter' in b) {
+    b.filter = `blur(${r}px)`;
+    b.drawImage(ctx.canvas, sx, sy, sw, sh, sx - x, sy - y, sw, sh);
+    b.filter = 'none';
+  } else {
+    const k = 1 / Math.max(2, r / 2);
+    blurSmall = blurSmall || document.createElement('canvas');
+    blurSmall.width = Math.max(1, Math.round(sw * k));
+    blurSmall.height = Math.max(1, Math.round(sh * k));
+    blurSmall.getContext('2d').drawImage(ctx.canvas, sx, sy, sw, sh, 0, 0, blurSmall.width, blurSmall.height);
+    b.imageSmoothingQuality = 'high';
+    b.drawImage(blurSmall, sx - x, sy - y, sw, sh);
   }
-  const k = 1 / Math.max(2, r / 2);
-  blurScratch = blurScratch || document.createElement('canvas');
-  blurScratch.width = Math.max(1, Math.round(sw * k));
-  blurScratch.height = Math.max(1, Math.round(sh * k));
-  blurScratch.getContext('2d').drawImage(ctx.canvas, sx, sy, sw, sh, 0, 0, blurScratch.width, blurScratch.height);
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(blurScratch, sx, sy, sw, sh);
+  if (feather > 0) {
+    // Fade the blurred copy to clear at each edge, across and then down.
+    b.globalCompositeOperation = 'destination-in';
+    for (const [len, gx, gy] of [[bw, bw, 0], [bh, 0, bh]]) {
+      const f = Math.min(0.5, feather / 2);
+      const g = b.createLinearGradient(0, 0, gx, gy);
+      g.addColorStop(0, 'rgba(0,0,0,0)');
+      g.addColorStop(f, 'rgba(0,0,0,1)');
+      g.addColorStop(1 - f, 'rgba(0,0,0,1)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      b.fillStyle = g;
+      b.fillRect(0, 0, bw, bh);
+    }
+    b.globalCompositeOperation = 'source-over';
+  }
+  ctx.drawImage(blurBox, x, y);
 }
 
 // Entrance and exit effects; p runs 0 (hidden) to 1 (fully shown).

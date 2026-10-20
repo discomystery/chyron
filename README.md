@@ -10,7 +10,7 @@ Everything runs in your browser. Videos are never uploaded anywhere.
 
 **On a phone:** the same site switches to a phone layout. The video sits on top with tool rails either side of it (graphics to add on the left, actions for the selected graphic or clip on the right), then the timeline, then the editing panel, with icon tabs along the bottom for Text, Style, Color and Timing. After export, **Save or share** opens the share sheet so the video can go straight to Photos.
 
-**Covers:** add a Cover to hide part of the video, such as another channel's on-screen titles. It can be a solid color, a gradient that fades from one edge, or a blur of whatever is underneath. Drag it into place and resize it from the right and bottom edges (or set width and height as percentages). Like other graphics it fades in and out, and its timing follows its bar in the timeline.
+**Covers:** add a Cover to hide part of the video, such as another channel's on-screen titles. It can be a solid color, a gradient that fades from one edge, or a blur of whatever is underneath (with soft edges that fade the blur out towards its sides). Drag it into place and resize it from the right and bottom edges (or set width and height as percentages). Like other graphics it fades in and out, and its timing follows its bar in the timeline.
 
 **Reframing a clip:** select a video clip, then drag the video to move it in the frame and pinch (or scroll) to zoom. Changing it at another moment adds a keyframe there, shown as a diamond on the clip. Each keyframe either **jumps** (holds, then cuts to the new framing) or **glides** (moves smoothly from the keyframe before).
 
