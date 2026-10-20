@@ -588,6 +588,7 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   #props, #clipProps { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-content: start; align-items: center; }
   #props[hidden], #clipProps[hidden] { display: none; }
   #propTitle, #textLabel, .inspector .f small, .inspector .actions, .inspector .w { display: none; }
+  .inspector .w.mini { display: block; margin-bottom: 4px; font-size: 11px; color: var(--muted); }
   .inspector[data-tab="text"] #props [data-group]:not([data-group="text"]),
   .inspector[data-tab="style"] #props [data-group]:not([data-group="style"]),
   .inspector[data-tab="color"] #props [data-group]:not([data-group="color"]),

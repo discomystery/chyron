@@ -537,6 +537,11 @@ async function addVideoFile(file) {
 
 /* ---------- drawing ---------- */
 
+// The second line of a name bar or quote can have its own typeface. Until one is picked, a name bar's
+// title uses the name's typeface and a quote's attribution uses the brand's text typeface.
+const subFontName = (o) => o.subFont || (o.kind === 'quote' ? state.brand.body : o.font);
+const subFontOf = (o) => ({ font: subFontName(o), track: o.kind === 'quote' ? 0 : o.track });
+
 function setFont(o, px) {
   const f = allFonts().find((f) => f.name === o.font) || FONTS[1];
   ctx.font = `${f.weight} ${px}px "${f.name}", "Arial Narrow", sans-serif`;
@@ -656,7 +661,7 @@ const LAYOUTS = {
       setFont(o, fs);
       const w1 = ctx.measureText(text).width + 2 * padX;
       const cap1 = capHeight();
-      setFont(o, subFs);
+      setFont(subFontOf(o), subFs);
       const w2 = sub ? ctx.measureText(sub).width + 2 * padX : 0;
       const cap2 = capHeight();
       return { fs, padX, bar, subFs, w1, w2, cap1, cap2, w: Math.max(w1, w2) + bar };
@@ -679,7 +684,7 @@ const LAYOUTS = {
         if (!sub) return;
         ctx.fillStyle = o.accent;
         ctx.fillRect(left(m.w2), by + h1 - 1, m.w2, h2 + 1);
-        setFont(o, m.subFs);
+        setFont(subFontOf(o), m.subFs);
         ctx.fillStyle = readable(o.accent);
         ctx.fillText(sub, left(m.w2) + m.padX, by + h1 + (h2 + m.cap2) / 2);
       },
@@ -711,7 +716,7 @@ const LAYOUTS = {
         const tx = bx + bar + pad;
         rows.forEach((row, i) => paintRow(row, alignX(o, tx, inner, row.w), by + pad * 0.8 + i * lh + fs * 0.92, o));
         if (!o.sub) return;
-        setFont({ font: state.brand.body }, subFs);
+        setFont(subFontOf(o), subFs);
         ctx.fillStyle = o.accent;
         const who = `— ${o.sub}`;
         ctx.fillText(who, alignX(o, tx, inner, ctx.measureText(who).width), by + h - pad * 0.8 - subFs * 0.3);
@@ -1269,6 +1274,8 @@ function fillInspector() {
     else el.value = el.type === 'number' ? +v.toFixed(2) : v;
   });
   $('#align').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === o.align));
+  props.querySelector('[data-k="subFont"]').value = subFontName(o);
+  $('#subFontLabel').textContent = o.kind === 'quote' ? 'Attribution typeface' : 'Title typeface';
   syncChips();
   syncTabs();
   syncColorTarget();
@@ -1488,8 +1495,9 @@ function renderLooks() {
 
 function renderFontOptions() {
   const html = allFonts().map((f) => `<option>${f.name}</option>`).join('');
-  document.querySelectorAll('[data-k="font"], [data-b="head"], [data-b="body"]').forEach((el) => (el.innerHTML = html));
+  document.querySelectorAll('[data-k="font"], [data-k="subFont"], [data-b="head"], [data-b="body"]').forEach((el) => (el.innerHTML = html));
   buildChips(props.querySelector('[data-k="font"]'));
+  buildChips(props.querySelector('[data-k="subFont"]'));
 }
 
 function libRow(label, actions) {
@@ -1582,7 +1590,7 @@ $('#brand').addEventListener('input', (e) => {
   state.brand[k] = val;
   // Graphics that were using the old brand value follow the change.
   for (const o of state.overlays) {
-    for (const f of k === 'head' || k === 'body' ? ['font'] : ['color', 'bg', 'accent']) if (o[f] === old) o[f] = val;
+    for (const f of k === 'head' || k === 'body' ? ['font', 'subFont'] : ['color', 'bg', 'accent']) if (o[f] === old) o[f] = val;
   }
   renderLooks();
   fillInspector();
