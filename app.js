@@ -19,19 +19,19 @@ const DEFAULT_BRAND = { dark: '#111111', light: '#ffffff', main: '#1740e0', acce
 // Values starting with $ are filled in from the brand kit when a graphic is made.
 const BASE = {
   text: '', sub: '', width: 0.84, x: 0.08, y: 0.5, size: 56, align: 'left', upper: false, track: 0,
-  font: '$body', color: '$light', bg: '$dark', accent: '$accent', bgAlpha: 1, radius: 0, alpha: 1, look: 'classic', dot: false,
+  font: '$body', color: '$light', bg: '$dark', accent: '$accent', bgAlpha: 1, radius: 0, alpha: 1, look: 'classic', hl: 'color', dot: false,
   anim: 'fade', out: 'fade', speed: 0.45, start: 0, end: 5, toEnd: true,
 };
 const PRESETS = {
   // The marker look: black on yellow highlighter strips, with tags in the brand's typewriter face.
-  headline: { name: 'Headline', kind: 'lines', look: 'marker', text: 'Your headline goes here', font: '$head', size: 84, y: 0.6, track: -0.02, color: '$dark', bg: '$accent', accent: '$dark', anim: 'marker' },
-  label: { name: 'Label', kind: 'lines', look: 'marker', text: '[ Update ]', size: 32, y: 0.579, upper: true, track: 0.04, anim: 'type' },
+  headline: { name: 'Headline', kind: 'lines', look: 'marker', hl: 'box', text: 'Your headline goes here', font: '$head', size: 84, y: 0.6, track: -0.02, color: '$dark', bg: '$accent', accent: '$dark', anim: 'marker' },
+  label: { name: 'Label', kind: 'lines', look: 'marker', hl: 'box', text: '[ Update ]', size: 32, y: 0.579, upper: true, track: 0.04, anim: 'type' },
   lower: { name: 'Name bar', kind: 'lower', look: 'marker', text: 'Maria Alvarez', sub: 'City council member, District 4', font: '$head', subFont: '$body', size: 54, y: 0.78, track: -0.01, color: '$dark', bg: '$accent', accent: '$dark', anim: 'marker' },
-  quote: { name: 'Quote', kind: 'quote', look: 'marker', text: 'We heard from hundreds of renters, and tonight we *acted*.', sub: 'Maria Alvarez', font: '$head', subFont: '$body', size: 58, y: 0.4, track: -0.01, anim: 'pop' },
-  credit: { name: 'Source credit', kind: 'lines', look: 'marker', text: 'Source: City Clerk’s Office', size: 28, y: 0.93, anim: 'type' },
+  quote: { name: 'Quote', kind: 'quote', look: 'marker', hl: 'box', text: 'We heard from hundreds of renters, and tonight we *acted*.', sub: 'Maria Alvarez', font: '$head', subFont: '$body', size: 58, y: 0.4, track: -0.01, anim: 'pop' },
+  credit: { name: 'Source credit', kind: 'lines', look: 'marker', hl: 'box', text: 'Source: City Clerk’s Office', size: 28, y: 0.93, anim: 'type' },
   text: { name: 'Plain text', kind: 'text', text: 'Add your text', font: '$head', y: 0.3 },
   image: { name: 'Image', kind: 'image', width: 0.4, x: 0.3, y: 0.3 },
-  subtitles: { name: 'Subtitles', kind: 'lines', look: 'marker', font: '$head', size: 54, y: 0.72, align: 'center', color: '$dark', bg: '$accent', accent: '$dark', anim: 'none', out: 'none', offset: 0 },
+  subtitles: { name: 'Subtitles', kind: 'lines', look: 'marker', hl: 'box', font: '$head', size: 54, y: 0.72, align: 'center', color: '$dark', bg: '$accent', accent: '$dark', anim: 'none', out: 'none', offset: 0 },
   logo: { name: 'Logo', kind: 'image', width: 0.2, x: 0.74, y: 0.04, anim: 'none', out: 'none' },
   // Covers hide part of the video, such as another channel's captions.
   cover: { name: 'Cover', kind: 'solid', width: 1, x: 0, y: 0.72, h: 0.28, bg: '$dark', edges: 'top', feather: 0.55, blur: 0.5 },
@@ -100,6 +100,16 @@ function resolveBrand(o) {
 
 function makeOverlay(type, extra = {}) {
   return resolveBrand({ ...BASE, ...PRESETS[type], type, id: uid(), ...extra });
+}
+
+// A highlight needs a color that shows: against the text for colored or underlined words, against the
+// box for boxed ones. If it doesn't, the first brand color that does takes over.
+function fitHighlight(o) {
+  const same = (a, b) => a.toLowerCase() === b.toLowerCase();
+  const clash = o.hl === 'box' ? o.bg : o.color;
+  if (!same(o.accent, clash)) return;
+  const b = state.brand;
+  o.accent = [b.main, b.extra, b.accent, b.dark, b.light].find((c) => !same(c, clash) && (o.hl === 'box' || !same(c, o.bg))) || o.accent;
 }
 
 function setEnd(o, v) {
@@ -255,7 +265,7 @@ function normalise(s) {
     out.brand.v = 2;
   }
   state = out;
-  out.overlays = out.overlays.map((o) => upgradeCover(resolveBrand({ ...BASE, out: 'fade', ...o, toEnd: o.toEnd ?? o.end >= 14.99 })));
+  out.overlays = out.overlays.map((o) => upgradeCover(resolveBrand({ ...BASE, out: 'fade', ...o, hl: o.hl || (o.look === 'marker' ? 'box' : 'color'), toEnd: o.toEnd ?? o.end >= 14.99 })));
   const ids = [...out.overlays, ...out.clips, ...out.styles, ...out.layouts].map((x) => x.id || 0);
   nextId = Math.max(0, ...ids) + 1;
 }
@@ -659,9 +669,10 @@ function wrapRich(text, maxW) {
   return rows;
 }
 
-// Paints a row of words from x on baseline y, and returns where it ended. In the marker look a highlighted
-// word sits on its own box of the highlight color, spanning the row's box (top, h). `limit` stops after
-// that many characters (for typing on); `dry` only measures.
+// Paints a row of words from x on baseline y, and returns where it ended. Highlighted words show in the
+// highlight color (hl 'color'), get underlined in it ('underline'), or sit on their own box of it spanning
+// the row (top, h) with the text in black or white ('box'). `limit` stops after that many characters
+// (for typing on); `dry` only measures.
 function paintRow(row, x, y, o, top, h, limit = Infinity, dry = false) {
   for (const t of row.toks) {
     if (limit <= 0) break;
@@ -670,12 +681,19 @@ function paintRow(row, x, y, o, top, h, limit = Infinity, dry = false) {
     const w = s === t.t ? t.w : ctx.measureText(s).width;
     limit -= s.length;
     if (!dry) {
-      if (t.hl && o.look === 'marker' && top != null) {
+      ctx.fillStyle = t.hl && o.hl === 'color' ? o.accent : o.color;
+      if (t.hl && o.hl === 'box' && top != null) {
         const pad = h * 0.08;
         ctx.fillStyle = o.accent;
         ctx.fillRect(x - pad, top, w + 2 * pad, h);
         ctx.fillStyle = readable(o.accent);
-      } else ctx.fillStyle = t.hl ? o.accent : o.color;
+      }
+      if (t.hl && o.hl === 'underline' && h) {
+        const fill = ctx.fillStyle;
+        ctx.fillStyle = o.accent;
+        ctx.fillRect(x, y + h * 0.1, w, h * 0.07);
+        ctx.fillStyle = fill;
+      }
       ctx.fillText(s, x, y);
     }
     x += w;
@@ -958,7 +976,7 @@ const LAYOUTS = {
         ctx.shadowColor = 'rgba(0,0,0,0.8)';
         ctx.shadowBlur = fs * 0.28;
         ctx.shadowOffsetY = fs * 0.04;
-        for (const r of rows) paintRow(r.row, r.x, r.y + fs * 0.95, o);
+        for (const r of rows) paintRow(r.row, r.x, r.y + fs * 0.95, o, r.y, lh);
       },
     };
   },
@@ -1676,7 +1694,8 @@ props.addEventListener('input', (e) => {
     if (cue) cue.text = el.value;
   } else o[k] = el.value;
   if (['text', 'start', 'end', 'offset', 'follow'].includes(k)) renderTimeline();
-  if (k === 'kind') {
+  if (k === 'hl') fitHighlight(o);
+  if (k === 'kind' || k === 'hl') {
     fillInspector();
     renderTimeline();
   }
