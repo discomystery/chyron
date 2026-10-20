@@ -674,28 +674,32 @@ function wrapRich(text, maxW) {
 // the row (top, h) with the text in black or white ('box'). `limit` stops after that many characters
 // (for typing on); `dry` only measures.
 function paintRow(row, x, y, o, top, h, limit = Infinity, dry = false) {
+  let joined = false; // the last word was highlighted, so a highlighted word next joins up with it
   for (const t of row.toks) {
     if (limit <= 0) break;
-    x += t.gap || 0;
+    const gap = t.gap || 0;
+    x += gap;
     const s = limit < t.t.length ? t.t.slice(0, limit) : t.t;
     const w = s === t.t ? t.w : ctx.measureText(s).width;
     limit -= s.length;
     if (!dry) {
       ctx.fillStyle = t.hl && o.hl === 'color' ? o.accent : o.color;
+      const join = t.hl && joined ? gap : 0;
       if (t.hl && o.hl === 'box' && top != null) {
         const pad = h * 0.08;
         ctx.fillStyle = o.accent;
-        ctx.fillRect(x - pad, top, w + 2 * pad, h);
+        ctx.fillRect(x - (join || pad), top, w + pad + (join || pad), h); // joined: from where the last box's word ended
         ctx.fillStyle = readable(o.accent);
       }
       if (t.hl && o.hl === 'underline' && h) {
         const fill = ctx.fillStyle;
         ctx.fillStyle = o.accent;
-        ctx.fillRect(x, y + h * 0.1, w, h * 0.07);
+        ctx.fillRect(x - join, y + h * 0.1, w + join, h * 0.07);
         ctx.fillStyle = fill;
       }
       ctx.fillText(s, x, y);
     }
+    joined = t.hl;
     x += w;
   }
   return x;
