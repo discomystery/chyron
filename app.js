@@ -757,12 +757,43 @@ function applyEffect(type, p, L, u) {
   }
 }
 
-function drawCover(c, sw, sh, draw) {
+/* ---------- framing: where each clip sits in the frame ---------- */
+
+// A clip's framing is a focus point (0-1 across the source video) and a zoom on top of fill or fit.
+// Keyframes are stored in the clip's own video time, so trimming doesn't move them.
+const NO_FRAMING = { x: 0.5, y: 0.5, zoom: 1 };
+const smooth = (p) => p * p * (3 - 2 * p);
+
+// A keyframe either jumps (holds the framing before it, then cuts) or glides there from the keyframe before.
+function framingAt(c, t) {
+  const ks = c && c.keys;
+  if (!ks || !ks.length) return NO_FRAMING;
+  let i = ks.length - 1;
+  while (i > 0 && ks[i].t > t) i--;
+  const a = ks[i], b = ks[i + 1];
+  if (t <= a.t || !b || b.move !== 'glide') return a;
+  const p = smooth((t - a.t) / (b.t - a.t));
+  return { x: a.x + (b.x - a.x) * p, y: a.y + (b.y - a.y) * p, zoom: a.zoom + (b.zoom - a.zoom) * p };
+}
+
+const baseScale = (sw, sh) => (state.fit === 'cover' ? Math.max : Math.min)(canvas.width / sw, canvas.height / sh);
+
+// Keeps the focus point where the picture still covers the frame, so no black edges appear.
+function keepInFrame(f, sw, sh) {
+  const W = canvas.width, H = canvas.height, k = baseScale(sw, sh) * f.zoom;
+  const w = sw * k, h = sh * k;
+  f.x = w > W ? clamp(f.x, W / (2 * w), 1 - W / (2 * w)) : 0.5;
+  f.y = h > H ? clamp(f.y, H / (2 * h), 1 - H / (2 * h)) : 0.5;
+}
+
+function drawCover(c, sw, sh, draw, f = NO_FRAMING) {
   const W = canvas.width, H = canvas.height;
-  const k = (state.fit === 'cover' ? Math.max : Math.min)(W / sw, H / sh);
+  const k = baseScale(sw, sh) * f.zoom, w = sw * k, h = sh * k;
+  const x = w > W ? clamp(W / 2 - f.x * w, W - w, 0) : (W - w) / 2;
+  const y = h > H ? clamp(H / 2 - f.y * h, H - h, 0) : (H - h) / 2;
   c.fillStyle = '#000';
   c.fillRect(0, 0, W, H);
-  draw((W - sw * k) / 2, (H - sh * k) / 2, sw * k, sh * k);
+  draw(x, y, w, h);
 }
 
 // The preview keeps the last good video frame so seeking never flashes or smears.
@@ -770,7 +801,7 @@ function refreshBackground() {
   const s = segs[playing ? active : segIndexAt(T)];
   if (s) {
     const el = s.m.el;
-    if (el.readyState >= 2 && el.videoWidth) drawCover(bgCtx, el.videoWidth, el.videoHeight, (x, y, w, h) => bgCtx.drawImage(el, x, y, w, h));
+    if (el.readyState >= 2 && el.videoWidth) drawCover(bgCtx, el.videoWidth, el.videoHeight, (x, y, w, h) => bgCtx.drawImage(el, x, y, w, h), framingAt(s.c, el.currentTime));
   } else {
     const g = bgCtx.createLinearGradient(0, 0, bgCanvas.width, bgCanvas.height);
     g.addColorStop(0, '#8693a0');
@@ -875,6 +906,7 @@ wrap.addEventListener('pointerdown', (e) => {
   if (e.target.closest('.empty') || exporting) return;
   const resize = e.target.classList.contains('grip');
   const o = resize ? selected() : hitTest(e);
+  if (!o && !resize && (selectedClip() || gesture)) return reframe(e);
   if (!resize) select(o ? o.id : null);
   if (!o) return;
   const k = canvas.getBoundingClientRect().width;
@@ -896,6 +928,175 @@ wrap.addEventListener('pointerdown', (e) => {
     save();
   });
 });
+
+// With a clip selected, dragging the video moves it in the frame and pinching zooms.
+// The change lands on a keyframe at the playhead, made there if needed.
+let gesture = null;
+const spread = (pts) => {
+  const [a, b] = [...pts.values()];
+  return Math.hypot(a[0] - b[0], a[1] - b[1]);
+};
+
+function clipAtPlayhead() {
+  const c = selectedClip(), s = segs.find((x) => x.c === c);
+  if (!s) return null;
+  if (T < s.start || T > s.start + s.len - 0.01) setTime(s.start);
+  return { c, s, src: clamp(c.in + (T - s.start), c.in, c.out) };
+}
+
+function keyHere(c, src) {
+  c.keys = c.keys || [];
+  let k = c.keys.find((k) => Math.abs(k.t - src) < 0.02);
+  if (!k) {
+    const { x, y, zoom } = framingAt(c, src);
+    k = { t: src, x, y, zoom, move: 'jump' };
+    c.keys.push(k);
+    c.keys.sort((a, b) => a.t - b.t);
+  }
+  return k;
+}
+
+function reframe(e) {
+  e.preventDefault();
+  if (gesture) {
+    gesture.pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (gesture.pts.size === 2) gesture.pinch = { d: spread(gesture.pts), zoom: gesture.key ? gesture.key.zoom : framingAt(gesture.c, gesture.src).zoom };
+    return;
+  }
+  const at = clipAtPlayhead();
+  if (!at) return;
+  pause();
+  const { c, s, src } = at;
+  const el = s.m.el, sw = el.videoWidth || 1920, sh = el.videoHeight || 1080;
+  const g = gesture = { c, src, pts: new Map([[e.pointerId, [e.clientX, e.clientY]]]), last: [e.clientX, e.clientY], from: [e.clientX, e.clientY], key: null, pinch: null };
+  const move = (ev) => {
+    if (!g.pts.has(ev.pointerId)) return;
+    g.pts.set(ev.pointerId, [ev.clientX, ev.clientY]);
+    if (!g.key) {
+      if (!g.pinch && Math.hypot(ev.clientX - g.from[0], ev.clientY - g.from[1]) < 5) return;
+      g.key = keyHere(c, src);
+    }
+    if (g.pinch && g.pts.size > 1) {
+      g.key.zoom = clamp(g.pinch.zoom * spread(g.pts) / g.pinch.d, 1, 5);
+    } else if (g.pts.size === 1) {
+      const shown = sw * baseScale(sw, sh) * g.key.zoom * (canvas.getBoundingClientRect().width / canvas.width);
+      const shownH = shown * (sh / sw);
+      g.key.x -= (ev.clientX - g.last[0]) / shown;
+      g.key.y -= (ev.clientY - g.last[1]) / shownH;
+    }
+    g.last = [ev.clientX, ev.clientY];
+    keepInFrame(g.key, sw, sh);
+    syncFraming();
+  };
+  const up = (ev) => {
+    g.pts.delete(ev.pointerId);
+    if (g.pts.size === 1) {
+      g.pinch = null;
+      g.last = [...g.pts.values()][0];
+    }
+    if (g.pts.size) return;
+    removeEventListener('pointermove', move);
+    removeEventListener('pointerup', up);
+    removeEventListener('pointercancel', up);
+    gesture = null;
+    if (!g.key) return select(null); // a tap on the video, not a drag
+    renderTimeline();
+    syncFraming();
+    save();
+  };
+  addEventListener('pointermove', move);
+  addEventListener('pointerup', up);
+  addEventListener('pointercancel', up);
+}
+
+wrap.addEventListener('wheel', (e) => {
+  if (!selectedClip() || exporting) return;
+  e.preventDefault();
+  const at = clipAtPlayhead();
+  if (!at) return;
+  pause();
+  const k = keyHere(at.c, at.src), el = at.s.m.el;
+  k.zoom = clamp(k.zoom * Math.exp(-e.deltaY * 0.0015), 1, 5);
+  keepInFrame(k, el.videoWidth || 1920, el.videoHeight || 1080);
+  renderTimeline();
+  syncFraming();
+  save();
+}, { passive: false });
+
+// The framing controls in the clip panel follow the keyframe under the playhead.
+let shownKey;
+function syncFraming() {
+  const c = selectedClip(), s = c && segs.find((x) => x.c === c);
+  if (!s) return;
+  const src = clamp(c.in + (T - s.start), c.in, c.out);
+  const inClip = T >= s.start && T <= s.start + s.len;
+  const k = inClip && c.keys ? c.keys.find((k) => Math.abs(k.t - src) < 0.02) : null;
+  shownKey = k;
+  const f = inClip ? framingAt(c, src) : framingAt(c, c.in);
+  const zoom = $('#clipZoom');
+  if (zoom !== document.activeElement) zoom.value = Math.round(f.zoom * 100);
+  $('#keyHere').setAttribute('aria-pressed', !!k);
+  $('#keyHere').classList.toggle('on', !!k);
+  const visible = (c.keys || []).filter((x) => x.t >= c.in && x.t <= c.out);
+  $('#prevKey').disabled = !visible.some((x) => x.t < src - 0.02);
+  $('#nextKey').disabled = !visible.some((x) => x.t > src + 0.02);
+  $('#keyMove').querySelectorAll('button').forEach((b) => {
+    b.disabled = !k || c.keys.indexOf(k) === 0;
+    b.setAttribute('aria-pressed', !!k && k.move === b.dataset.v);
+  });
+  $('#resetFrame').disabled = !(c.keys && c.keys.length);
+  rowsEl.querySelectorAll('.kf').forEach((d) => d.classList.toggle('on', d._key === k));
+}
+
+function jumpToKey(dir) {
+  const at = clipAtPlayhead();
+  if (!at) return;
+  const { c, s, src } = at;
+  const ks = (c.keys || []).filter((x) => x.t >= c.in && x.t <= c.out && (dir < 0 ? x.t < src - 0.02 : x.t > src + 0.02));
+  const k = dir < 0 ? ks[ks.length - 1] : ks[0];
+  if (k) setTime(s.start + (k.t - c.in));
+  syncFraming();
+}
+$('#prevKey').onclick = () => jumpToKey(-1);
+$('#nextKey').onclick = () => jumpToKey(1);
+$('#keyHere').onclick = () => {
+  const at = clipAtPlayhead();
+  if (!at) return;
+  const { c, src } = at;
+  const k = c.keys && c.keys.find((k) => Math.abs(k.t - src) < 0.02);
+  if (k) c.keys.splice(c.keys.indexOf(k), 1);
+  else keyHere(c, src);
+  renderTimeline();
+  syncFraming();
+  save();
+};
+$('#keyMove').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b || !shownKey) return;
+  shownKey.move = b.dataset.v;
+  syncFraming();
+  save();
+});
+$('#clipZoom').addEventListener('input', (e) => {
+  const v = parseFloat(e.target.value);
+  if (Number.isNaN(v) || v < 100 || v > 500) return;
+  const at = clipAtPlayhead();
+  if (!at) return;
+  const k = keyHere(at.c, at.src), el = at.s.m.el;
+  k.zoom = v / 100;
+  keepInFrame(k, el.videoWidth || 1920, el.videoHeight || 1080);
+  renderTimeline();
+  syncFraming();
+  save();
+});
+$('#resetFrame').onclick = () => {
+  const c = selectedClip();
+  if (!c) return;
+  delete c.keys;
+  renderTimeline();
+  syncFraming();
+  save();
+};
 
 /* ---------- inspector ---------- */
 
@@ -935,6 +1136,7 @@ function fillInspector() {
     const i = state.clips.indexOf(c);
     $('#earlier').disabled = i === 0;
     $('#later').disabled = i === state.clips.length - 1;
+    syncFraming();
   }
   syncRails();
   if (!o) return;
@@ -999,13 +1201,15 @@ props.addEventListener('change', (e) => {
   }
 });
 // The − and + buttons beside number fields.
-props.addEventListener('click', (e) => {
+const stepNumber = (e) => {
   const btn = e.target.closest('[data-step]');
   if (!btn) return;
   const input = btn.parentElement.querySelector('input');
   input.value = clamp((parseFloat(input.value) || 0) + +btn.dataset.step, +input.min, +input.max);
   input.dispatchEvent(new Event('input', { bubbles: true }));
-});
+};
+props.addEventListener('click', stepNumber);
+clipProps.addEventListener('click', stepNumber);
 $('#align').addEventListener('click', (e) => {
   const o = selected();
   if (!o || !e.target.dataset.v) return;
@@ -1114,7 +1318,7 @@ $('#split').onclick = () => {
   const s = segs[segIndexAt(T)];
   if (!s || T - s.start < 0.1 || s.start + s.len - T < 0.1) return toast('Move the playhead to where you want to cut, then split.');
   const cut = s.c.in + (T - s.start);
-  const second = { ...s.c, id: uid(), in: cut };
+  const second = { ...s.c, id: uid(), in: cut, keys: s.c.keys && s.c.keys.map((k) => ({ ...k })) };
   s.c.out = cut;
   state.clips.splice(state.clips.indexOf(s.c) + 1, 0, second);
   pause();
@@ -1325,6 +1529,23 @@ function renderTimeline() {
       el.textContent = s.c.name;
       el.title = 'Drag either end to trim';
       el.onpointerdown = (e) => startTrim(e, s, el, lane);
+      // Framing keyframes show as diamonds; tap one to go to it.
+      for (const k of s.c.keys || []) {
+        if (k.t < s.c.in || k.t > s.c.out) continue;
+        const d = document.createElement('i');
+        d.className = `kf${k.move === 'glide' ? ' glide' : ''}`;
+        d._key = k;
+        d.style.left = `${((k.t - s.c.in) / s.len) * 100}%`;
+        d.title = k.move === 'glide' ? 'Keyframe (glide)' : 'Keyframe (jump)';
+        d.onpointerdown = (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          selectClip(s.c.id);
+          setTime(s.start + (k.t - s.c.in));
+          syncFraming();
+        };
+        el.append(d);
+      }
       lane.append(el);
     }
     const label = Object.assign(document.createElement('span'), { textContent: 'Video' });
@@ -1580,8 +1801,9 @@ async function exportFast() {
           break;
         }
         T = n / fps;
+        const f = framingAt(s.c, times[n - first]);
         drawFrame(T, true, () => {
-          if (sample) drawCover(ctx, sample.displayWidth, sample.displayHeight, (x, y, w, h) => sample.draw(ctx, x, y, w, h));
+          if (sample) drawCover(ctx, sample.displayWidth, sample.displayHeight, (x, y, w, h) => sample.draw(ctx, x, y, w, h), f);
         });
         if (sample) sample.close();
         await videoOut.add(T, 1 / fps);
@@ -1781,6 +2003,7 @@ function tick(ts) {
     drawFrame(T, playing, () => ctx.drawImage(bgCanvas, 0, 0));
   }
   updateSel();
+  if (selectedClipId && !gesture) syncFraming();
   // Keep the subtitle text box showing the line under the playhead.
   const subs = selected();
   const cue = subs && subs.cues ? cueAt(subs, T) : null;

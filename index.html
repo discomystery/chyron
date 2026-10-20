@@ -222,6 +222,23 @@
         <small>You can also drag either end of the clip in the timeline.</small>
       </div>
       <label class="check"><input data-c="muted" type="checkbox"> Mute this clip’s sound</label>
+      <div class="f framing"><span class="w">Framing</span>
+        <small class="keep">Drag the video to move it in the frame. Pinch or scroll to zoom. Change it at another moment and a keyframe is added there.</small>
+        <div class="key-row">
+          <button type="button" id="prevKey" class="icon" title="Previous keyframe" aria-label="Previous keyframe"><svg class="ic" aria-hidden="true"><use href="#i-prev"/></svg></button>
+          <button type="button" id="keyHere" class="icon" title="Keyframe at the playhead" aria-label="Keyframe at the playhead" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-key"/></svg></button>
+          <button type="button" id="nextKey" class="icon" title="Next keyframe" aria-label="Next keyframe"><svg class="ic" aria-hidden="true"><use href="#i-next"/></svg></button>
+          <div class="seg" id="keyMove" title="How the framing gets to this keyframe">
+            <button type="button" data-v="jump" title="Jump: hold, then cut to this framing" aria-label="Jump to this framing"><svg class="ic" aria-hidden="true"><use href="#i-jump"/></svg><span class="w">Jump</span></button>
+            <button type="button" data-v="glide" title="Glide: move smoothly from the keyframe before" aria-label="Glide to this framing"><svg class="ic" aria-hidden="true"><use href="#i-glide"/></svg><span class="w">Glide</span></button>
+          </div>
+        </div>
+        <div class="zoom-row">
+          <span class="w">Zoom</span><svg class="ic fi" aria-hidden="true"><use href="#i-zoom"/></svg>
+          <div class="num"><button type="button" data-step="-10" aria-label="Zoom out">−</button><label class="num-box"><input id="clipZoom" min="100" max="500" step="1" type="number" inputmode="numeric" aria-label="Zoom"><i>%</i></label><button type="button" data-step="10" aria-label="Zoom in">+</button></div>
+          <button type="button" id="resetFrame" class="icon" title="Reset framing and remove keyframes" aria-label="Reset framing"><svg class="ic" aria-hidden="true"><use href="#i-reset"/></svg></button>
+        </div>
+      </div>
       <div class="actions">
         <button type="button" id="split"><svg class="ic" aria-hidden="true"><use href="#i-split"/></svg>Split at playhead</button>
         <button type="button" id="earlier"><svg class="ic" aria-hidden="true"><use href="#i-earlier"/></svg>Move earlier</button>

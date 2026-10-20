@@ -296,6 +296,17 @@ textarea:disabled { background: transparent; }
 .num-box input:focus-visible { outline: none; }
 
 /* Timing & animation: always open on a computer, folded away on a phone. */
+/* Framing controls for a clip. */
+.framing .keep { display: block; margin: 4px 0 8px; font-size: 12px; color: #7d88a6; }
+.key-row, .zoom-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.key-row > button { width: 38px; height: 36px; padding: 0; }
+#keyHere.on { color: var(--flash); border-color: var(--flash); }
+#keyMove { flex: 1; margin: 0; }
+#keyMove button { gap: 5px; font-size: 12px; }
+.zoom-row .num { flex: 1; margin: 0; }
+.zoom-row .w { font-size: 13px; }
+#resetFrame { width: 38px; height: 36px; padding: 0; }
+
 /* Phone-only pieces. */
 .fi, .caps-ic, .chips, .brand-dots, .edit-tabs { display: none; }
 .mark { margin: -8px 0 15px; padding: 4px 10px; font-size: 12px; }
@@ -393,6 +404,12 @@ select.wide { display: block; }
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.45) 0 4px, transparent 4px 10px) 0 calc(100% - 3px) / 100% 3px no-repeat,
     var(--signal-deep);
 }
+
+/* Framing keyframes on a video clip: yellow diamonds jump, white ones glide. */
+.vclip .kf { position: absolute; top: 50%; z-index: 1; width: 11px; height: 11px; margin: -5.5px 0 0 -5.5px; background: var(--flash); border: 1.5px solid #0d1220; transform: rotate(45deg); cursor: pointer; }
+.vclip .kf.glide { background: #fff; }
+.vclip .kf.on { box-shadow: 0 0 0 2px var(--tally); }
+.vclip .kf::before { content: ""; position: absolute; inset: -6px; }
 
 /* Trim handles: a wide grab area with a slim white grip drawn inside it. */
 .clip::before, .clip::after, .vclip::before, .vclip::after {
@@ -606,6 +623,13 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   #timing [data-k="speed"] + .chips { order: 2; }
   #timing [data-k="speed"] + .chips button { width: 52px; font-weight: 700; font-size: 18px; }
   #whole { order: 3; width: 44px; height: 44px; margin: 0; padding: 0; }
+
+  /* Clip framing on a phone. */
+  #clipProps .framing { grid-column: 1 / -1; }
+  .inspector .f small.keep { display: block; margin: 0 0 6px; }
+  .key-row > button, #resetFrame { width: 44px; height: 44px; }
+  #keyMove button { height: 44px; }
+  .vclip .kf { width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; }
 
   /* The tab strip. */
   .edit-tabs { display: flex; flex: none; padding: 0 6px max(0px, env(safe-area-inset-bottom)); background: var(--desk); border-top: 1px solid var(--line); }
