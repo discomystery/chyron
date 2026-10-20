@@ -370,6 +370,33 @@ textarea:disabled { background: transparent; }
 #capBar.busy i { width: 35% !important; animation: busy 1.2s ease-in-out infinite alternate; }
 @keyframes busy { from { margin-left: 0; } to { margin-left: 65%; } }
 
+/* Transcript: a panel beside the video on a computer, a sheet below it on a phone. */
+.transcript {
+  position: fixed;
+  inset: 64px 12px 12px auto;
+  z-index: 9;
+  display: none;
+  flex-direction: column;
+  width: min(440px, calc(100vw - 24px));
+  height: auto;
+  max-height: none;
+  margin: 0;
+  padding: 16px 16px 8px;
+}
+.transcript[open] { display: flex; }
+.tr-head { display: flex; align-items: center; gap: 10px; }
+.tr-head h2 { margin: 0; }
+.tr-head span { flex: 1; color: var(--muted); font-size: 13px; }
+.transcript .hint { margin: 8px 0 10px; font-size: 12px; }
+.transcript .hint .ic { width: 1em; height: 1em; }
+.tr-lines { flex: 1; min-height: 0; overflow-y: auto; margin: 0 -6px; padding: 0 6px; }
+.tr-line { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; gap: 6px; align-items: start; padding: 6px; border-radius: 8px; }
+.tr-line.now { background: #1d2a55; box-shadow: inset 3px 0 0 var(--signal); }
+.tr-time { padding: 6px 4px; font-size: 12px; font-variant-numeric: tabular-nums; }
+.tr-line textarea { width: 100%; min-height: 34px; padding: 6px 8px; resize: none; overflow: hidden; line-height: 1.35; }
+.tr-tools { display: flex; gap: 2px; }
+.tr-tools button { width: 32px; height: 34px; padding: 0; }
+
 /* Phone-only pieces. */
 .fi, .caps-ic, .chips, .brand-dots, .edit-tabs { display: none; }
 .mark { margin: -8px 0 15px; padding: 4px 10px; font-size: 12px; }
@@ -738,6 +765,11 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   .key-row > button, #resetFrame { width: 44px; height: 44px; }
   #keyMove button { height: 44px; }
   .vclip .kf { width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; }
+
+  .transcript { inset: auto 0 0 0; width: 100%; height: 62dvh; border-radius: 14px 14px 0 0; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .tr-line { grid-template-columns: 54px minmax(0, 1fr); }
+  .tr-tools { grid-column: 2; justify-content: flex-end; }
+  .tr-tools button { width: 40px; height: 36px; }
 
   /* The tab strip. */
   .edit-tabs { display: flex; flex: none; padding: 0 6px max(0px, env(safe-area-inset-bottom)); background: var(--desk); border-top: 1px solid var(--line); }

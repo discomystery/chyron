@@ -148,6 +148,7 @@
           <option value="text">None, with a soft shadow</option>
         </select>
       </label>
+      <button type="button" id="openTranscript" class="wide" data-group="text" data-subs="only"><svg class="ic" aria-hidden="true"><use href="#i-transcript"/></svg>Edit as transcript</button>
       <label class="check" data-group="text" data-subs="only"><input data-k="karaoke" type="checkbox"> Highlight each word as it’s spoken</label>
       <label class="f" data-group="text" data-subs="only">Subtitles follow
         <select data-k="follow">
@@ -352,6 +353,16 @@
     </div>
   </div>
   <div class="actions"><button type="button" id="brandDone" class="primary">Done</button></div>
+</dialog>
+
+<dialog id="transcript" class="transcript" aria-labelledby="trTitle">
+  <div class="tr-head">
+    <h2 id="trTitle">Transcript</h2>
+    <span id="trCount"></span>
+    <button type="button" id="trClose" class="icon" aria-label="Close transcript"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <p class="hint">Edit any line. To split one, put the cursor where it should break and tap <svg class="ic" aria-hidden="true"><use href="#i-split"/></svg>. Tap a time to play that line.</p>
+  <div class="tr-lines" id="trLines"></div>
 </dialog>
 
 <dialog id="captionDlg">

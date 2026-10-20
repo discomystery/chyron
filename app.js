@@ -251,6 +251,7 @@ function applyState() {
   renderBrand();
   fillInspector();
   renderTimeline();
+  if (transcript.open) renderTranscript();
 }
 
 async function load() {
@@ -2612,6 +2613,7 @@ function tick(ts) {
   updateSel();
   updateGhost();
   updateCoverPreview();
+  updateTranscript();
   if (selectedClipId && !gesture) syncFraming();
   // Keep the subtitle text box showing the line under the playhead.
   const subs = selected();
@@ -2833,7 +2835,7 @@ function captionCues(words, max) {
   };
   for (const w of words) {
     const last = group[group.length - 1];
-    if (last && (group.length >= max || w.start - last.end > 0.7 || (/[.?!]$/.test(last.text) && group.length > 1))) flush();
+    if (last && (group.length >= max || w.start - last.end > 0.7 || /[.?!]$/.test(last.text))) flush();
     group.push(w);
   }
   flush();
@@ -2899,7 +2901,7 @@ $('#capGo').onclick = async () => {
   select(made[0].id);
   save();
   const lines = made.reduce((n, o) => n + o.cues.length, 0);
-  toast(`${lines} captions added. Check them over: tap a line in the timeline to fix a word.`);
+  toast(`${lines} captions added. Check them over with Edit as transcript in the captions settings.`);
 };
 
 function addCaptionLayer(source, cues) {
@@ -2910,6 +2912,192 @@ function addCaptionLayer(source, cues) {
   const o = makeOverlay('subtitles', { cues, source, follow: 'footage', auto: true, ...look });
   state.overlays.push(o);
   return o;
+}
+
+/* ---------- transcript ---------- */
+
+// Every line of a captions or subtitles layer, to read, edit, split, join or delete in one list.
+// It sits beside the video (not over it), so lines can be played while editing.
+const transcript = $('#transcript');
+let trId = null, playUntil = null;
+// Looked up by id each time, since undo swaps in fresh copies of every layer.
+const trLayer = () => state.overlays.find((x) => x.id === trId && x.cues) || null;
+
+$('#openTranscript').onclick = () => {
+  const o = selected();
+  if (!o || !o.cues) return;
+  trId = o.id;
+  renderTranscript();
+  transcript.show();
+  placeTranscript();
+};
+
+// On a computer the panel stops above the timeline, so lines can still be dragged there.
+function placeTranscript() {
+  transcript.style.bottom = phone() ? '' : `${innerHeight - $('.timeline').getBoundingClientRect().top + 8}px`;
+}
+addEventListener('resize', () => transcript.open && placeTranscript());
+$('#trClose').onclick = () => transcript.close();
+
+// Where each line first shows on the timeline (lines cut out of the edit have none).
+function lineTimes(o) {
+  const at = new Map();
+  for (const p of cuePlacements(o)) if (!at.has(p.c)) at.set(p.c, p);
+  return at;
+}
+
+function renderTranscript() {
+  const o = trLayer();
+  if (!o) return transcript.close();
+  o.cues.sort((a, b) => a.start - b.start);
+  const at = lineTimes(o);
+  $('#trCount').textContent = `${o.cues.length} line${o.cues.length === 1 ? '' : 's'}`;
+  $('#trLines').replaceChildren(...o.cues.map((c, i) => {
+    const row = document.createElement('div');
+    row.className = 'tr-line';
+    row._cue = c;
+    const p = at.get(c);
+    const time = document.createElement('button');
+    time.type = 'button';
+    time.className = 'tr-time';
+    time.textContent = p ? fmt(p.start) : 'cut';
+    time.disabled = !p;
+    time.title = p ? 'Play this line' : 'This line falls in a part of the video that was cut';
+    time.onclick = () => {
+      setTime(p.start + 0.01);
+      playUntil = p.end;
+      play();
+    };
+    const text = document.createElement('textarea');
+    text.rows = 1;
+    text.value = c.text;
+    text.setAttribute('aria-label', `Line ${i + 1}`);
+    text.oninput = () => {
+      c.text = text.value.replace(/\n/g, ' ');
+      fitLine(text);
+      renderTimeline();
+      save();
+    };
+    text.onchange = () => retimeWords(c);
+    const tools = document.createElement('div');
+    tools.className = 'tr-tools';
+    tools.append(
+      trButton('split', 'Split this line at the cursor', () => splitLine(o, c, text)),
+      trButton('join', 'Join with the next line', () => joinLine(o, c), i === o.cues.length - 1),
+      trButton('trash', 'Delete this line', () => deleteLine(o, c), false, 'danger'),
+    );
+    row.append(time, text, tools);
+    return row;
+  }));
+  requestAnimationFrame(() => $('#trLines').querySelectorAll('textarea').forEach(fitLine));
+}
+
+function trButton(name, label, onclick, disabled = false, cls = '') {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = `icon ${cls}`;
+  b.title = label;
+  b.setAttribute('aria-label', label);
+  b.disabled = disabled;
+  b.append(iconEl(name));
+  // Keep the text box's cursor (and focus) when tapping Split.
+  b.onpointerdown = (e) => e.preventDefault();
+  b.onclick = onclick;
+  return b;
+}
+
+function fitLine(t) {
+  t.style.height = 'auto';
+  t.style.height = `${t.scrollHeight}px`;
+}
+
+// After the words of a timed caption change, spread its word timings evenly so highlighting still works.
+function retimeWords(c) {
+  if (!c.words) return;
+  const words = c.text.replace(/\*/g, '').split(/\s+/).filter(Boolean);
+  if (words.length === c.words.length) return;
+  const total = words.reduce((n, w) => n + w.length + 1, 0);
+  let t = c.start;
+  c.words = words.map((w) => {
+    const d = ((c.end - c.start) * (w.length + 1)) / total;
+    return [t, (t += d)];
+  });
+  save();
+}
+
+// Splits at the cursor (or the middle word). Timed captions split exactly between words;
+// others split in proportion to how much text falls on each side.
+function splitLine(o, c, box) {
+  retimeWords(c);
+  const words = c.text.split(/\s+/).filter(Boolean);
+  if (words.length < 2) return toast('A line needs at least two words to split.');
+  let cut = Math.round(words.length / 2);
+  if (document.activeElement === box && box.selectionStart > 0 && box.selectionStart < box.value.length) {
+    const before = box.value.slice(0, box.selectionStart).trim().split(/\s+/).filter(Boolean).length;
+    cut = clamp(before, 1, words.length - 1);
+  }
+  const first = words.slice(0, cut).join(' '), second = words.slice(cut).join(' ');
+  let at;
+  if (c.words && c.words.length === words.length) at = (c.words[cut - 1][1] + c.words[cut][0]) / 2;
+  else at = c.start + ((c.end - c.start) * first.length) / (first.length + second.length);
+  const next = { start: at, end: c.end, text: second };
+  if (c.words && c.words.length === words.length) {
+    next.words = c.words.slice(cut);
+    c.words = c.words.slice(0, cut);
+  }
+  c.end = at;
+  c.text = first;
+  o.cues.splice(o.cues.indexOf(c) + 1, 0, next);
+  afterLineChange();
+  const boxes = $('#trLines').querySelectorAll('textarea'), i = o.cues.indexOf(next);
+  if (boxes[i]) {
+    boxes[i].focus();
+    boxes[i].setSelectionRange(0, 0);
+  }
+}
+
+function joinLine(o, c) {
+  const i = o.cues.indexOf(c), n = o.cues[i + 1];
+  if (!n) return;
+  retimeWords(c);
+  retimeWords(n);
+  c.words = c.words && n.words ? [...c.words, ...n.words] : undefined;
+  if (!c.words) delete c.words;
+  c.text = `${c.text} ${n.text}`.trim();
+  c.end = n.end;
+  o.cues.splice(i + 1, 1);
+  afterLineChange();
+}
+
+function deleteLine(o, c) {
+  o.cues.splice(o.cues.indexOf(c), 1);
+  afterLineChange();
+}
+
+function afterLineChange() {
+  renderTranscript();
+  renderTimeline();
+  fillInspector();
+  save();
+}
+
+// The line under the playhead stays highlighted, and in view while playing.
+let trShown = null;
+function updateTranscript() {
+  if (playUntil != null && (!playing || T >= playUntil - 0.02)) {
+    if (playing) pause();
+    playUntil = null;
+  }
+  const o = transcript.open && trLayer();
+  if (!o) return;
+  const cue = cueAt(o, T);
+  if (cue === trShown) return;
+  trShown = cue;
+  for (const row of $('#trLines').children) {
+    const on = row._cue === cue;
+    row.classList.toggle('now', on);
+    if (on && playing) row.scrollIntoView({ block: 'nearest' });
+  }
 }
 
 /* ---------- platform safe zones ---------- */
