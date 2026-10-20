@@ -12,8 +12,12 @@ Everything runs in your browser. Videos are never uploaded anywhere.
 
 **Covers:** add a Cover to hide part of the video, such as another channel's on-screen titles. It can be a solid color or a blur of whatever is underneath, and either can have soft edges, on all sides or just one (a solid cover softened on one side works as a gradient). Drag it into place and resize it from the right and bottom edges (or set width and height as percentages). Like other graphics it fades in and out, and its timing follows its bar in the timeline.
 
+**Subtitles:** add an SRT or VTT file and the lines follow the video they were made for, so they stay in sync when you trim, split or reorder clips. For subtitles made from the finished edit, set them to follow the timeline instead.
+
+**Safe zones:** pick TikTok, Reels or Shorts under Safe zones to shade, roughly, where each app's buttons and captions sit over a vertical video. They're only shown while editing, never exported.
+
 **Layers:** drag a graphic's name in the timeline up or down to change what sits in front.
 
-**Reframing a clip:** select a video clip, then drag the video to move it in the frame and pinch (or scroll) to zoom. Changing it at another moment adds a keyframe there, shown as a diamond on the clip. Each keyframe either **jumps** (holds, then cuts to the new framing) or **glides** (moves smoothly from the keyframe before). Drag a diamond to retime its keyframe (it snaps to the clip's ends and to where graphics start or end); hold Option/Alt while dragging to copy it instead.
+**Reframing a clip:** select a video clip (the rest of its picture shows dimmed around the frame), then drag the video to move it in the frame and pinch (or scroll) to zoom. Changing it at another moment adds a keyframe there, shown as a diamond on the clip. Each keyframe either **jumps** (holds, then cuts to the new framing) or **glides** (moves smoothly from the keyframe before). Drag a diamond to retime its keyframe (it snaps to the clip's ends and to where graphics start or end); hold Option/Alt while dragging to copy it instead.
 
 Video export uses [Mediabunny](https://mediabunny.dev) (MPL-2.0), included unmodified in `vendor/`. Icons are from [Phosphor](https://phosphoricons.com) (MIT).

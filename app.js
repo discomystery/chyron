@@ -111,20 +111,48 @@ function parseSubtitles(src) {
   return cues.sort((a, b) => a.start - b.start);
 }
 
-const cueAt = (o, t) => o.cues.find((c) => t >= c.start + o.offset && t < c.end + o.offset) || null;
+// Subtitles made for a video file follow that file's footage, so trimming, splitting and reordering
+// clips keeps them in sync. Older subtitles, or ones set to follow the timeline, use timeline time.
+const followsFootage = (o) => o.follow !== 'timeline' && o.source && segs.some((s) => s.m.name === o.source);
+
+function cueAt(o, t) {
+  if (!followsFootage(o)) return o.cues.find((c) => t >= c.start + o.offset && t < c.end + o.offset) || null;
+  const s = segs[segIndexAt(t)];
+  if (!s || s.m.name !== o.source || t < s.start || t >= s.start + s.len) return null;
+  const src = s.c.in + (t - s.start);
+  return o.cues.find((c) => src >= c.start + o.offset && src < c.end + o.offset) || null;
+}
+
+// Where each subtitle line lands on the timeline (a line can appear more than once, or not at all).
+function cuePlacements(o) {
+  if (!followsFootage(o)) return o.cues.map((c) => ({ c, start: c.start + o.offset, end: c.end + o.offset }));
+  const out = [];
+  for (const s of segs) {
+    if (s.m.name !== o.source) continue;
+    for (const c of o.cues) {
+      const a = Math.max(c.start + o.offset, s.c.in), b = Math.min(c.end + o.offset, s.c.out);
+      if (b > a) out.push({ c, start: s.start + (a - s.c.in), end: s.start + (b - s.c.in) });
+    }
+  }
+  return out.sort((x, y) => x.start - y.start);
+}
 
 async function addSubtitleFile(file) {
   const cues = parseSubtitles(await file.text());
   if (!cues.length) return toast(`No subtitles were found in ${file.name}. It should be an SRT or VTT file.`);
+  // Assume the file was made for the video under the playhead (or the selected clip's video).
+  const seg = segs.find((s) => s.c === selectedClip()) || segs[segIndexAt(T)];
+  const source = seg ? seg.m.name : null;
   let o = state.overlays.find((x) => x.type === 'subtitles');
-  if (o) o.cues = cues; // keep the styling already chosen
-  else state.overlays.push((o = makeOverlay('subtitles', { cues })));
+  if (o) Object.assign(o, { cues, source, follow: 'footage' }); // keep the styling already chosen
+  else state.overlays.push((o = makeOverlay('subtitles', { cues, source, follow: 'footage' })));
   renderTimeline();
   select(o.id);
-  if (!cueAt(o, T)) setTime(cues[0].start + o.offset);
+  const first = cuePlacements(o)[0];
+  if (!cueAt(o, T) && first) setTime(first.start + 0.01);
   fillInspector();
   save();
-  toast(`${cues.length} subtitles added from ${file.name}.`);
+  toast(source ? `${cues.length} subtitles added. They follow ${source}, so they stay in sync when you trim or move it.` : `${cues.length} subtitles added from ${file.name}.`);
 }
 
 /* ---------- saving, undo, project files ---------- */
@@ -898,14 +926,41 @@ function keepInFrame(f, sw, sh) {
   f.y = h > H ? clamp(f.y, H / (2 * h), 1 - H / (2 * h)) : 0.5;
 }
 
-function drawCover(c, sw, sh, draw, f = NO_FRAMING) {
+// Where a video of size sw×sh lands in the frame, in frame pixels.
+function coverRect(sw, sh, f = NO_FRAMING) {
   const W = canvas.width, H = canvas.height;
   const k = baseScale(sw, sh) * f.zoom, w = sw * k, h = sh * k;
   const x = w > W ? clamp(W / 2 - f.x * w, W - w, 0) : (W - w) / 2;
   const y = h > H ? clamp(H / 2 - f.y * h, H - h, 0) : (H - h) / 2;
+  return { x, y, w, h };
+}
+
+function drawCover(c, sw, sh, draw, f = NO_FRAMING) {
+  const { x, y, w, h } = coverRect(sw, sh, f);
   c.fillStyle = '#000';
-  c.fillRect(0, 0, W, H);
+  c.fillRect(0, 0, canvas.width, canvas.height);
   draw(x, y, w, h);
+}
+
+let shownVideo = null;
+
+// While a clip is selected, the rest of its picture shows dimmed around the frame, so you can see
+// what's outside the crop while reframing. It's only on screen, never in the export.
+function updateGhost() {
+  const g = $('#ghost');
+  const show = !!(selectedClipId && shownVideo && !exporting);
+  g.hidden = !show;
+  if (!show) return;
+  const area = $('#stageArea').getBoundingClientRect(), wr = canvas.getBoundingClientRect();
+  const k = wr.width / canvas.width, r = shownVideo.rect;
+  const w = r.w * k, h = r.h * k;
+  Object.assign(g.style, { left: `${wr.left - area.left + r.x * k}px`, top: `${wr.top - area.top + r.y * k}px`, width: `${w}px`, height: `${h}px` });
+  const dpr = Math.min(devicePixelRatio || 1, 2), cw = Math.max(1, Math.round(w * dpr)), ch = Math.max(1, Math.round(h * dpr));
+  if (g.width !== cw || g.height !== ch) {
+    g.width = cw;
+    g.height = ch;
+  }
+  g.getContext('2d').drawImage(shownVideo.el, 0, 0, cw, ch);
 }
 
 // The preview keeps the last good video frame so seeking never flashes or smears.
@@ -913,7 +968,11 @@ function refreshBackground() {
   const s = segs[playing ? active : segIndexAt(T)];
   if (s) {
     const el = s.m.el;
-    if (el.readyState >= 2 && el.videoWidth) drawCover(bgCtx, el.videoWidth, el.videoHeight, (x, y, w, h) => bgCtx.drawImage(el, x, y, w, h), framingAt(s.c, el.currentTime));
+    if (el.readyState >= 2 && el.videoWidth) {
+      const f = framingAt(s.c, el.currentTime);
+      drawCover(bgCtx, el.videoWidth, el.videoHeight, (x, y, w, h) => bgCtx.drawImage(el, x, y, w, h), f);
+      shownVideo = { el, rect: coverRect(el.videoWidth, el.videoHeight, f) };
+    }
   } else {
     const g = bgCtx.createLinearGradient(0, 0, bgCanvas.width, bgCanvas.height);
     g.addColorStop(0, '#8693a0');
@@ -967,6 +1026,7 @@ function fitStage() {
 
 function setFormat(f) {
   state.format = FORMATS[f] ? f : '9:16';
+  if ($('#safe')) setTimeout(showSafeZones);
   const [w, h] = FORMATS[state.format];
   if (bgCanvas.width !== w || bgCanvas.height !== h) {
     canvas.width = bgCanvas.width = w;
@@ -1275,6 +1335,7 @@ function fillInspector() {
   });
   $('#align').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === o.align));
   props.querySelector('[data-k="subFont"]').value = subFontName(o);
+  if (o.cues) props.querySelector('[data-k="follow"]').value = followsFootage(o) ? 'footage' : 'timeline';
   $('#subFontLabel').textContent = o.kind === 'quote' ? 'Attribution typeface' : 'Title typeface';
   syncChips();
   syncTabs();
@@ -1299,11 +1360,15 @@ props.addEventListener('input', (e) => {
     } else if (k === 'start') o.start = clamp(v, 0, endOf(o) - 0.1);
     else if (k === 'end') setEnd(o, v);
     else o[k] = v;
+  } else if (k === 'follow') {
+    // Following footage needs to know which video; take the one under the playhead.
+    if (el.value === 'footage' && !o.source) o.source = segs[segIndexAt(T)]?.m.name;
+    o.follow = el.value;
   } else if (o.cues && k === 'text') {
     const cue = cueAt(o, T);
     if (cue) cue.text = el.value;
   } else o[k] = el.value;
-  if (['text', 'start', 'end', 'offset'].includes(k)) renderTimeline();
+  if (['text', 'start', 'end', 'offset', 'follow'].includes(k)) renderTimeline();
   if (k === 'kind') {
     fillInspector();
     renderTimeline();
@@ -1688,16 +1753,16 @@ function renderTimeline() {
     lane.className = 'lane';
     if (o.cues) {
       // Subtitles show every line as its own block; click one to jump to it.
-      for (const c of o.cues) {
-        if (c.start + o.offset >= duration) break;
+      for (const { c, start, end } of cuePlacements(o)) {
+        if (start >= duration) break;
         const cue = document.createElement('div');
         cue.className = 'cue';
-        cue.style.left = pct(c.start + o.offset);
-        cue.style.width = pct(c.end - c.start);
+        cue.style.left = pct(start);
+        cue.style.width = pct(end - start);
         cue.title = c.text;
         cue.onpointerdown = () => {
           select(o.id);
-          setTime(c.start + o.offset + 0.01);
+          setTime(start + 0.01);
           fillInspector();
         };
         lane.append(cue);
@@ -2241,6 +2306,7 @@ function tick(ts) {
     drawFrame(T, playing, () => ctx.drawImage(bgCanvas, 0, 0));
   }
   updateSel();
+  updateGhost();
   if (selectedClipId && !gesture) syncFraming();
   // Keep the subtitle text box showing the line under the playhead.
   const subs = selected();
@@ -2263,6 +2329,40 @@ function tick(ts) {
   }
   requestAnimationFrame(tick);
 }
+
+/* ---------- platform safe zones ---------- */
+
+// Roughly where each app's buttons and captions sit over a vertical video, as fractions of the frame
+// [x, y, width, height]. They are approximate and only drawn on screen, never exported.
+const SAFE_ZONES = {
+  tiktok: [[0, 0, 1, 0.07, 'Top tabs'], [0, 0.75, 1, 0.25, 'Caption, sound and account'], [0.86, 0.36, 0.14, 0.39, 'Buttons']],
+  reels: [[0, 0, 1, 0.11, 'Reels header'], [0, 0.7, 1, 0.3, 'Caption and account'], [0.86, 0.42, 0.14, 0.28, 'Buttons']],
+  shorts: [[0, 0, 1, 0.08, 'Search and menu'], [0, 0.72, 1, 0.28, 'Title, channel and subscribe'], [0.84, 0.38, 0.16, 0.34, 'Buttons']],
+};
+let safeZone = '';
+try {
+  safeZone = localStorage.getItem('chyron-safe-zone') || '';
+} catch {}
+function showSafeZones() {
+  const box = $('#safe'), zones = SAFE_ZONES[safeZone];
+  $('#safeZones').value = safeZone;
+  box.hidden = !zones || state.format !== '9:16';
+  if (box.hidden) return;
+  box.replaceChildren(...zones.map(([x, y, w, h, label]) => {
+    const z = document.createElement('div');
+    Object.assign(z.style, { left: `${x * 100}%`, top: `${y * 100}%`, width: `${w * 100}%`, height: `${h * 100}%` });
+    z.dataset.label = label;
+    return z;
+  }));
+}
+$('#safeZones').onchange = (e) => {
+  safeZone = e.target.value;
+  try {
+    localStorage.setItem('chyron-safe-zone', safeZone);
+  } catch {}
+  if (safeZone && state.format !== '9:16') toast('Safe zones are for vertical 9:16 video. Switch Shape to Vertical to see them.');
+  showSafeZones();
+};
 
 /* ---------- phone editing panel ---------- */
 

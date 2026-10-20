@@ -240,6 +240,15 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
   pointer-events: auto;
 }
 .sel.tall .vgrip { display: block; }
+/* The rest of a clip's picture, dimmed around the frame while reframing. */
+.stage { position: relative; }
+.ghost { position: absolute; z-index: 0; opacity: 0.3; pointer-events: none; }
+.wrap { z-index: 1; }
+.rail { position: relative; z-index: 2; }
+/* Platform safe zones: shaded areas the app's own buttons and captions cover. */
+.safe { position: absolute; inset: 0; pointer-events: none; }
+.safe div { position: absolute; background: rgba(255, 71, 59, 0.16); outline: 1px dashed rgba(255, 140, 130, 0.8); outline-offset: -1px; }
+.safe div::after { content: attr(data-label); position: absolute; left: 4px; top: 3px; padding: 1px 5px; background: rgba(13, 18, 32, 0.8); border-radius: 3px; color: #ffb4ad; font-size: 10px; font-weight: 600; white-space: nowrap; }
 .guide { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--flash); pointer-events: none; }
 .empty {
   position: absolute;
@@ -573,7 +582,7 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   #addRail { grid-template-columns: 46px 46px; }
   .rail > div { display: contents; }
   .rail > div[hidden] { display: none; }
-  .rail button { flex-direction: column; gap: 3px; padding: 0; background: rgba(34, 42, 66, 0.7); font-size: 10px; font-weight: 600; color: var(--muted); }
+  .rail button { flex-direction: column; gap: 3px; padding: 0; background: #1c2338; font-size: 10px; font-weight: 600; color: var(--muted); }
   .rail button .ic { width: 19px; height: 19px; color: var(--ink); }
   #addRail .ic { color: var(--signal); }
   .rail button.danger .ic { color: #ff8a80; }
@@ -666,6 +675,8 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   #timing [data-k="speed"] + .chips { order: 2; }
   #timing [data-k="speed"] + .chips button { width: 52px; font-weight: 700; font-size: 18px; }
   #whole { order: 3; width: 44px; height: 44px; margin: 0; padding: 0; }
+
+  .safe div::after { left: 2px; top: 2px; padding: 0 3px; font-size: 8px; opacity: 0.85; }
 
   /* Clip framing on a phone. */
   #clipProps .framing { grid-column: 1 / -1; }

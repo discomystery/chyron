@@ -47,6 +47,14 @@
         <option value="contain">Fit inside</option>
       </select>
     </label>
+    <label class="inline" title="Shade where each app's buttons and captions cover a vertical video">Safe zones
+      <select id="safeZones">
+        <option value="">Off</option>
+        <option value="tiktok">TikTok</option>
+        <option value="reels">Reels</option>
+        <option value="shorts">Shorts</option>
+      </select>
+    </label>
     <span class="spacer"></span>
     <button id="install" hidden><svg class="ic" aria-hidden="true"><use href="#i-install"/></svg>Install app</button>
     <button id="still"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>Save frame as image</button>
@@ -81,6 +89,7 @@
   </aside>
 
   <section class="stage" id="stageArea">
+    <canvas class="ghost" id="ghost" hidden aria-hidden="true"></canvas>
     <!-- Phone only: rails in the space beside a tall video. -->
     <div class="rail" id="addRail" aria-label="Add a graphic">
       <button data-add="headline"><svg class="ic" aria-hidden="true"><use href="#i-headline"/></svg><span>Headline</span></button>
@@ -95,6 +104,7 @@
     <div class="wrap" id="wrap">
       <canvas id="stage" width="1080" height="1920"></canvas>
       <div class="guide" id="guide" hidden></div>
+      <div class="safe" id="safe" hidden aria-hidden="true"></div>
       <div class="sel" id="sel" hidden><i class="grip" title="Drag to change width"></i><i class="vgrip" title="Drag to change height"></i></div>
       <div class="empty" id="empty">
         <svg class="ic" aria-hidden="true"><use href="#i-video"/></svg>
@@ -137,6 +147,12 @@
           <option value="text">None, with a soft shadow</option>
         </select>
       </label>
+      <label class="f" data-group="text" data-subs="only">Subtitles follow
+        <select data-k="follow">
+          <option value="footage">The video they were made for</option>
+          <option value="timeline">The finished timeline</option>
+        </select>
+        <small>Following the video keeps them in sync when you trim, split or move clips. Choose the timeline for subtitles made from the edited video.</small></label>
       <label class="f" data-group="text" data-subs="only">Shift timing (seconds)<input data-k="offset" type="number" step="0.1">
         <small>Use a negative number if the subtitles appear late.</small></label>
       <button type="button" id="replaceImage" class="wide" data-group="text" data-for="image"><svg class="ic" aria-hidden="true"><use href="#i-swap"/></svg>Replace image</button>
