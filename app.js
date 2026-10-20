@@ -1988,6 +1988,10 @@ $('#saveLayout').onclick = () => {
 
 function renderBrand() {
   const b = state.brand;
+  const root = document.documentElement.style;
+  for (const k of ['dark', 'light', 'accent']) root.setProperty(`--b-${k}`, b[k]);
+  root.setProperty('--b-head', `"${b.head}"`);
+  root.setProperty('--b-body', `"${b.body}"`);
   document.querySelectorAll('[data-b]').forEach((el) => (el.value = b[el.dataset.b]));
   $('#logoPreview').hidden = $('#removeLogo').hidden = !b.logo;
   if (b.logo) $('#logoPreview').src = state.assets[b.logo] || '';

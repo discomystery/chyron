@@ -165,27 +165,33 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  height: 62px;
+  height: 52px;
   margin-bottom: 7px;
   padding: 0 12px;
-  background: linear-gradient(155deg, #6f86a6, #37465f 60%, #27324a);
+  background: #2c3446;
   text-indent: 0;
   line-height: 1;
   transition: filter var(--ease);
 }
-.thumb b, .thumb i { font-style: normal; white-space: nowrap; }
-.t-headline b { padding: 4px 5px 3px; line-height: 1.15; background: #111; color: #fff; font: 400 14px "Anton", sans-serif; text-transform: uppercase; }
-.t-label b { padding: 3px 6px; background: var(--signal-deep); color: #fff; font-weight: 800; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
-.t-lower b { padding: 3px 6px; background: #fff; border-left: 3px solid var(--signal-deep); color: #111; font-weight: 800; font-size: 12px; }
-.t-lower i { padding: 2px 6px; background: var(--signal-deep); border-left: 3px solid var(--signal-deep); color: #fff; font-size: 9px; }
-.t-quote b { padding: 6px 8px; background: #111; border-left: 3px solid var(--flash); color: #fff; font: 600 12px "Newsreader", serif; }
-.t-credit { justify-content: flex-end; padding-bottom: 8px; }
-.t-credit b { color: #fff; font-size: 10px; font-weight: 600; text-shadow: 0 1px 3px #000; }
+/* Previews follow the brand kit's colors and typefaces (set by renderBrand). */
+.thumb b, .thumb i, .thumb em { font-style: normal; white-space: nowrap; }
+.t-headline b { padding: 2px 5px; line-height: 1.2; background: var(--b-accent); color: var(--b-dark); font: 800 12px var(--b-head), sans-serif; letter-spacing: -0.02em; }
+.t-label b, .t-credit b { padding: 2px 5px; background: var(--b-dark); color: var(--b-light); font: 700 9px var(--b-body), monospace; }
+.t-label b { letter-spacing: 0.04em; text-transform: uppercase; }
+.t-lower b { padding: 2px 5px; line-height: 1.2; background: var(--b-accent); color: var(--b-dark); font: 800 11px var(--b-head), sans-serif; }
+.t-lower i { padding: 2px 5px; background: var(--b-dark); color: var(--b-light); font: 700 8px var(--b-body), monospace; }
+.t-lower i em, .t-quote i { color: var(--b-accent); }
+.t-quote { padding: 0 10px; }
+.t-quote span { padding: 4px 7px 5px; background: var(--b-dark); border-top: 2px solid var(--b-accent); }
+.t-quote i { display: block; margin-bottom: 3px; font: 700 7px var(--b-body), monospace; text-transform: uppercase; }
+.t-quote b { color: var(--b-light); font: 800 11px var(--b-head), sans-serif; }
+.t-quote b em { padding: 0 2px; background: var(--b-accent); color: var(--b-dark); }
+.t-credit { justify-content: flex-end; padding-bottom: 7px; }
 .t-cover { justify-content: flex-end; align-items: stretch; padding: 0; }
-.t-cover b { height: 70%; background: linear-gradient(rgba(13, 18, 32, 0), #0d1220 70%); }
-.t-text b { color: #fff; font-size: 15px; font-weight: 800; text-shadow: 0 1px 4px #000; }
+.t-cover b { height: 70%; background: linear-gradient(rgba(17, 17, 17, 0), #111 75%); }
+.t-text b { color: #fff; font: 800 13px var(--b-head), sans-serif; text-shadow: 0 1px 4px #000; }
 
-.tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+.tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 14px; }
 .tile { flex-direction: column; gap: 5px; padding: 10px 0 8px; font-size: 12px; }
 .tile .ic { width: 20px; height: 20px; color: var(--signal); }
 .tile:hover .ic { color: #fff; }
