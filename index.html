@@ -65,7 +65,7 @@
     <button data-add="quote"><span class="thumb t-quote"><b>“Tonight we acted.”</b></span>Quote</button>
     <button data-add="credit"><span class="thumb t-credit"><b>Source: City Clerk</b></span>Source credit</button>
     <button data-add="text"><span class="thumb t-text"><b>Plain text</b></span>Plain text</button>
-    <button data-add="cover"><span class="thumb t-cover"><b></b></span>Cover (solid, gradient or blur)</button>
+    <button data-add="cover"><span class="thumb t-cover"><b></b></span>Cover (solid or blur)</button>
     <div class="tiles">
       <button id="addImage" class="tile"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>Image</button>
       <button id="addLogo" class="tile"><svg class="ic" aria-hidden="true"><use href="#i-logo"/></svg>Logo</button>
@@ -143,7 +143,6 @@
 
       <label class="f" data-group="style" data-for="solid gradient blur"><span class="w">Cover style</span><select data-k="kind" data-chips="fill" aria-label="Cover style">
           <option value="solid">Solid</option>
-          <option value="gradient">Gradient</option>
           <option value="blur">Blur</option>
         </select></label>
       <label class="f" data-group="style" data-for="lines lower quote text"><span class="w">Typeface</span><select data-k="font" data-chips="font"></select></label>
@@ -156,15 +155,15 @@
       <div class="f cued" data-group="style" data-for="solid gradient blur"><span class="w">Height</span><svg class="ic fi" aria-hidden="true"><use href="#i-height"/></svg>
         <div class="num"><button type="button" data-step="-5" aria-label="Shorter">−</button><label class="num-box"><input data-k="h" data-scale="100" min="2" max="100" step="1" type="number" inputmode="numeric" aria-label="Height"><i>%</i></label><button type="button" data-step="5" aria-label="Taller">+</button></div>
       </div>
-      <label class="f" data-group="style" data-for="gradient"><span class="w">Solid edge</span><select data-k="dir" data-chips="dir" aria-label="Solid edge">
-          <option value="bottom">Bottom</option>
+      <label class="f cued" data-group="style" data-for="blur"><span class="w">Blur strength</span><svg class="ic fi" aria-hidden="true"><use href="#i-fill-blur"/></svg><input data-k="blur" type="range" min="0" max="1" step="0.05" aria-label="Blur strength"></label>
+      <label class="f cued" data-group="style" data-for="solid blur"><span class="w">Soft edges</span><svg class="ic fi" aria-hidden="true"><use href="#i-feather"/></svg><input data-k="feather" type="range" min="0" max="1" step="0.05" aria-label="Soft edges"></label>
+      <label class="f" data-group="style" data-for="solid blur"><span class="w">Which edges</span><select data-k="edges" data-chips="edges" aria-label="Soften which edges">
+          <option value="all">All sides</option>
           <option value="top">Top</option>
+          <option value="bottom">Bottom</option>
           <option value="left">Left</option>
           <option value="right">Right</option>
         </select></label>
-      <label class="f cued" data-group="style" data-for="gradient"><span class="w">Fade length</span><svg class="ic fi" aria-hidden="true"><use href="#i-glide"/></svg><input data-k="fade" type="range" min="0.1" max="1" step="0.05" aria-label="Fade length"></label>
-      <label class="f cued" data-group="style" data-for="blur"><span class="w">Blur strength</span><svg class="ic fi" aria-hidden="true"><use href="#i-fill-blur"/></svg><input data-k="blur" type="range" min="0" max="1" step="0.05" aria-label="Blur strength"></label>
-      <label class="f cued" data-group="style" data-for="blur"><span class="w">Soft edges</span><svg class="ic fi" aria-hidden="true"><use href="#i-feather"/></svg><input data-k="feather" type="range" min="0" max="1" step="0.05" aria-label="Soft edges"></label>
       <div class="f" data-group="style" data-for="lines lower quote text"><span class="w">Alignment</span>
         <div class="seg" id="align">
           <button type="button" data-v="left" title="Left" aria-label="Align left"><svg class="ic" aria-hidden="true"><use href="#i-left"/></svg></button>
@@ -174,18 +173,18 @@
       </div>
       <label class="check caps" data-group="style" data-for="lines lower quote text" title="All capitals"><input data-k="upper" type="checkbox"> <span class="w">All capitals</span><b class="caps-ic" aria-hidden="true">AA</b></label>
 
-      <div class="f" data-group="color" data-for="lines lower quote text solid gradient"><span class="w">Colors</span>
+      <div class="f" data-group="color" data-for="lines lower quote text solid"><span class="w">Colors</span>
         <div class="looks" id="looks" data-for="lines lower quote text"></div>
         <div class="colors">
           <label data-for="lines lower quote text" title="Text color"><span>Text</span><input data-k="color" type="color"></label>
-          <label data-for="lines lower quote solid gradient" title="Box color"><span>Box</span><input data-k="bg" type="color"></label>
+          <label data-for="lines lower quote solid" title="Box color"><span>Box</span><input data-k="bg" type="color"></label>
           <label data-for="lines lower quote text" title="Highlight color"><span id="accentLabel">Highlight</span><input data-k="accent" type="color"></label>
         </div>
         <div class="brand-dots" id="brandDots"></div>
       </div>
-      <label class="f cued" data-group="color" data-for="lines lower quote solid gradient"><span class="w">Box opacity</span><svg class="ic fi" aria-hidden="true"><use href="#i-opacity"/></svg><input data-k="bgAlpha" type="range" min="0" max="1" step="0.05" aria-label="Box opacity"></label>
+      <label class="f cued" data-group="color" data-for="lines lower quote solid"><span class="w">Box opacity</span><svg class="ic fi" aria-hidden="true"><use href="#i-opacity"/></svg><input data-k="bgAlpha" type="range" min="0" max="1" step="0.05" aria-label="Box opacity"></label>
       <label class="f cued" data-group="color" data-for="image"><span class="w">Opacity</span><svg class="ic fi" aria-hidden="true"><use href="#i-opacity"/></svg><input data-k="alpha" type="range" min="0.05" max="1" step="0.05" aria-label="Opacity"></label>
-      <label class="f cued" data-group="color" data-for="lines quote image solid gradient blur"><span class="w">Rounded corners</span><svg class="ic fi" aria-hidden="true"><use href="#i-corner"/></svg><input data-k="radius" type="range" min="0" max="1" step="0.05" aria-label="Rounded corners"></label>
+      <label class="f cued" data-group="color" data-for="lines quote image solid blur"><span class="w">Rounded corners</span><svg class="ic fi" aria-hidden="true"><use href="#i-corner"/></svg><input data-k="radius" type="range" min="0" max="1" step="0.05" aria-label="Rounded corners"></label>
 
       <div class="group" id="timing" data-group="timing" data-subs="hide">
         <div class="f"><span class="w">On screen</span>

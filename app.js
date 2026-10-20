@@ -31,10 +31,19 @@ const PRESETS = {
   subtitles: { name: 'Subtitles', kind: 'lines', size: 50, y: 0.72, align: 'center', anim: 'none', out: 'none', offset: 0 },
   logo: { name: 'Logo', kind: 'image', width: 0.2, x: 0.74, y: 0.04, anim: 'none', out: 'none' },
   // Covers hide part of the video, such as another channel's captions.
-  cover: { name: 'Cover', kind: 'gradient', width: 1, x: 0, y: 0.72, h: 0.28, bg: '$dark', dir: 'bottom', fade: 0.55, blur: 0.5, feather: 0.35 },
+  cover: { name: 'Cover', kind: 'solid', width: 1, x: 0, y: 0.72, h: 0.28, bg: '$dark', edges: 'top', feather: 0.55, blur: 0.5 },
 };
 const COVERS = new Set(['solid', 'gradient', 'blur']);
-const COVER_NAMES = { solid: 'Solid cover', gradient: 'Gradient cover', blur: 'Blur' };
+const COVER_NAMES = { solid: 'Solid cover', blur: 'Blur' };
+
+// Gradient covers became solid covers with one soft edge: the edge opposite the old solid side.
+function upgradeCover(o) {
+  if (o.kind !== 'gradient') return o;
+  o.kind = 'solid';
+  o.edges = { bottom: 'top', top: 'bottom', left: 'right', right: 'left' }[o.dir] || 'top';
+  o.feather = o.fade ?? 0.55;
+  return o;
+}
 
 let state = { format: '9:16', fit: 'cover', clips: [], overlays: [], brand: { ...DEFAULT_BRAND }, styles: [], layouts: [], fonts: [], assets: {} };
 let selectedId = null;
@@ -173,7 +182,7 @@ function normalise(s) {
   const out = { format: '9:16', fit: 'cover', clips: [], overlays: [], styles: [], layouts: [], fonts: [], assets: {}, ...s };
   out.brand = { ...DEFAULT_BRAND, ...s.brand };
   state = out;
-  out.overlays = out.overlays.map((o) => resolveBrand({ ...BASE, out: 'fade', ...o, toEnd: o.toEnd ?? o.end >= 14.99 }));
+  out.overlays = out.overlays.map((o) => upgradeCover(resolveBrand({ ...BASE, out: 'fade', ...o, toEnd: o.toEnd ?? o.end >= 14.99 })));
   const ids = [...out.overlays, ...out.clips, ...out.styles, ...out.layouts].map((x) => x.id || 0);
   nextId = Math.max(0, ...ids) + 1;
 }
@@ -752,8 +761,10 @@ const LAYOUTS = {
   },
 };
 
-// A box that hides part of the video: a solid color, a color fading out from one edge, or a blur.
+// A box that hides part of the video: a solid color or a blur of what's underneath.
+// Soft edges fade it out towards all its sides, or from just one side like a gradient.
 function coverLayout(o, text, bx, by, bw, u) {
+  upgradeCover(o);
   const bh = o.h * canvas.height;
   return {
     x: bx, y: by, w: bw, h: bh, ix: bx, iw: bw,
@@ -761,77 +772,83 @@ function coverLayout(o, text, bx, by, bw, u) {
       ctx.beginPath();
       ctx.roundRect(bx, by, bw, bh, (o.radius * Math.min(bw, bh)) / 2);
       ctx.clip();
-      if (o.kind === 'blur') return blurRegion(bx, by, bw, bh, (3 + o.blur * 45) * u, o.feather || 0);
-      ctx.globalAlpha *= o.bgAlpha;
-      if (o.kind === 'solid') ctx.fillStyle = o.bg;
+      const box = coverBox(bw, bh);
+      const b = box.getContext('2d');
+      if (o.kind === 'blur') blurInto(b, bx, by, bw, bh, (3 + o.blur * 45) * u);
       else {
-        // The gradient runs from clear at the open edge to solid at the chosen edge.
-        const [x0, y0, x1, y1] = {
-          bottom: [0, by, 0, by + bh], top: [0, by + bh, 0, by],
-          right: [bx, 0, bx + bw, 0], left: [bx + bw, 0, bx, 0],
-        }[o.dir] || [0, by, 0, by + bh];
-        const g = ctx.createLinearGradient(x0, y0, x1, y1);
-        g.addColorStop(0, withAlpha(o.bg, 0));
-        g.addColorStop(clamp(o.fade, 0.05, 1), withAlpha(o.bg, 1));
-        g.addColorStop(1, withAlpha(o.bg, 1));
-        ctx.fillStyle = g;
+        b.fillStyle = o.bg;
+        b.fillRect(0, 0, box.width, box.height);
+        ctx.globalAlpha *= o.bgAlpha;
       }
-      ctx.fillRect(bx, by, bw, bh);
+      softenEdges(b, box.width, box.height, o.feather || 0, o.edges || 'all');
+      ctx.drawImage(box, bx, by);
     },
   };
 }
 
-function withAlpha(hex, a) {
-  const n = parseInt(hex.slice(1), 16);
-  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+let coverCanvas, padCanvas, smallCanvas;
+function coverBox(w, h) {
+  coverCanvas = coverCanvas || document.createElement('canvas');
+  coverCanvas.width = Math.max(1, Math.ceil(w));
+  coverCanvas.height = Math.max(1, Math.ceil(h));
+  return coverCanvas;
 }
 
-// Blurs what has been drawn so far inside a box, optionally fading the blur out towards the edges
-// so it blends into the picture around it. Browsers without canvas filters (older Safari) get a
-// soft blur from shrinking the area and stretching it back.
-let blurBox, blurSmall;
-function blurRegion(x, y, w, h, r, feather) {
-  const W = canvas.width, H = canvas.height;
-  const bw = Math.ceil(w), bh = Math.ceil(h);
-  if (bw < 1 || bh < 1) return;
-  // Take a margin around the box so the blur near its edges draws on real picture.
-  const m = r * 2;
-  const sx = clamp(x - m, 0, W), sy = clamp(y - m, 0, H);
-  const sw = clamp(x + w + m, 0, W) - sx, sh = clamp(y + h + m, 0, H) - sy;
-  if (sw < 1 || sh < 1) return;
-  blurBox = blurBox || document.createElement('canvas');
-  blurBox.width = bw;
-  blurBox.height = bh;
-  const b = blurBox.getContext('2d');
+// Blurs what has been drawn so far under a box, into `b`. Where the box meets the edge of the frame,
+// the frame's edge pixels are stretched outward first, so the blur doesn't fade into empty space.
+// Browsers without canvas filters (older Safari) get a soft blur from shrinking the area and stretching it back.
+function blurInto(b, x, y, w, h, r) {
+  const W = canvas.width, H = canvas.height, m = Math.ceil(r * 3);
+  const px = Math.floor(x) - m, py = Math.floor(y) - m, pw = Math.ceil(w) + 2 * m + 1, ph = Math.ceil(h) + 2 * m + 1;
+  const sx = clamp(px, 0, W), sy = clamp(py, 0, H), ex = clamp(px + pw, 0, W), ey = clamp(py + ph, 0, H);
+  if (ex - sx < 1 || ey - sy < 1) return;
+  padCanvas = padCanvas || document.createElement('canvas');
+  padCanvas.width = pw;
+  padCanvas.height = ph;
+  const p = padCanvas.getContext('2d');
+  p.drawImage(ctx.canvas, sx, sy, ex - sx, ey - sy, sx - px, sy - py, ex - sx, ey - sy);
+  const l = sx - px, t = sy - py, r2 = ex - px, b2 = ey - py;
+  if (l > 0) p.drawImage(padCanvas, l, t, 1, b2 - t, 0, t, l, b2 - t);
+  if (r2 < pw) p.drawImage(padCanvas, r2 - 1, t, 1, b2 - t, r2, t, pw - r2, b2 - t);
+  if (t > 0) p.drawImage(padCanvas, 0, t, pw, 1, 0, 0, pw, t);
+  if (b2 < ph) p.drawImage(padCanvas, 0, b2 - 1, pw, 1, 0, b2, pw, ph - b2);
   if ('filter' in b) {
     b.filter = `blur(${r}px)`;
-    b.drawImage(ctx.canvas, sx, sy, sw, sh, sx - x, sy - y, sw, sh);
+    b.drawImage(padCanvas, px - x, py - y);
     b.filter = 'none';
-  } else {
-    const k = 1 / Math.max(2, r / 2);
-    blurSmall = blurSmall || document.createElement('canvas');
-    blurSmall.width = Math.max(1, Math.round(sw * k));
-    blurSmall.height = Math.max(1, Math.round(sh * k));
-    blurSmall.getContext('2d').drawImage(ctx.canvas, sx, sy, sw, sh, 0, 0, blurSmall.width, blurSmall.height);
-    b.imageSmoothingQuality = 'high';
-    b.drawImage(blurSmall, sx - x, sy - y, sw, sh);
+    return;
   }
-  if (feather > 0) {
-    // Fade the blurred copy to clear at each edge, across and then down.
-    b.globalCompositeOperation = 'destination-in';
-    for (const [len, gx, gy] of [[bw, bw, 0], [bh, 0, bh]]) {
-      const f = Math.min(0.5, feather / 2);
-      const g = b.createLinearGradient(0, 0, gx, gy);
-      g.addColorStop(0, 'rgba(0,0,0,0)');
-      g.addColorStop(f, 'rgba(0,0,0,1)');
-      g.addColorStop(1 - f, 'rgba(0,0,0,1)');
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      b.fillStyle = g;
-      b.fillRect(0, 0, bw, bh);
-    }
-    b.globalCompositeOperation = 'source-over';
+  const k = 1 / Math.max(2, r / 2);
+  smallCanvas = smallCanvas || document.createElement('canvas');
+  smallCanvas.width = Math.max(1, Math.round(pw * k));
+  smallCanvas.height = Math.max(1, Math.round(ph * k));
+  smallCanvas.getContext('2d').drawImage(padCanvas, 0, 0, smallCanvas.width, smallCanvas.height);
+  b.imageSmoothingQuality = 'high';
+  b.drawImage(smallCanvas, px - x, py - y, pw, ph);
+}
+
+// Fades a box to clear at its edges: all four, or one ('top', 'bottom', 'left', 'right').
+// `soft` is how far in the fade reaches: across half the box for all sides, the whole box for one.
+function softenEdges(b, w, h, soft, edges) {
+  if (soft <= 0) return;
+  b.globalCompositeOperation = 'destination-in';
+  const clear = 'rgba(0,0,0,0)', solid = 'rgba(0,0,0,1)';
+  const ramps = edges === 'all'
+    ? [[0, 0, w, 0, true], [0, 0, 0, h, true]]
+    : [{ top: [0, 0, 0, h], bottom: [0, h, 0, 0], left: [0, 0, w, 0], right: [w, 0, 0, 0] }[edges] || [0, 0, 0, h]];
+  for (const [x0, y0, x1, y1, both] of ramps) {
+    const f = both ? Math.min(0.5, soft / 2) : Math.min(1, soft);
+    const g = b.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, clear);
+    g.addColorStop(f, solid);
+    if (both) {
+      g.addColorStop(1 - f, solid);
+      g.addColorStop(1, clear);
+    } else g.addColorStop(1, solid);
+    b.fillStyle = g;
+    b.fillRect(0, 0, w, h);
   }
-  ctx.drawImage(blurBox, x, y);
+  b.globalCompositeOperation = 'source-over';
 }
 
 // Entrance and exit effects; p runs 0 (hidden) to 1 (fully shown).
@@ -1663,7 +1680,8 @@ function renderTimeline() {
     name.textContent = COVERS.has(o.kind) ? COVER_NAMES[o.kind] : o.text.split('\n')[0].replace(/\*/g, '') || PRESETS[o.type].name;
     if (o.cues) name.textContent += ` (${o.cues.length})`;
     name.prepend(iconEl(TYPE_ICONS[o.type]));
-    name.onclick = () => select(o.id);
+    name.title = 'Tap to select, drag up or down to reorder';
+    name.onpointerdown = (e) => dragLayer(e, row, o);
     const lane = document.createElement('div');
     lane.className = 'lane';
     if (o.cues) {
@@ -1694,6 +1712,50 @@ function renderTimeline() {
     rowsEl.append(row);
   }
   markSelection();
+}
+
+// Drag a layer's name up or down to change what sits in front; a tap just selects it.
+// The row slides with the pointer and a line marks where it will land; rows only move on release,
+// since moving the touched row mid-drag makes phones cancel the touch.
+function dragLayer(e, row, o) {
+  if (exporting) return;
+  e.preventDefault();
+  const rows = [...rowsEl.querySelectorAll('.row[data-id]')], from = rows.indexOf(row);
+  const others = rows.filter((r) => r !== row);
+  const mids = rows.map((r) => {
+    const b = r.getBoundingClientRect();
+    return b.top + b.height / 2;
+  });
+  const y0 = e.clientY;
+  let moving = false, to = from;
+  const move = (ev) => {
+    const dy = ev.clientY - y0;
+    if (!moving && Math.abs(dy) < 6) return;
+    moving = true;
+    row.classList.add('dragging');
+    row.style.transform = `translateY(${dy}px)`;
+    to = mids.filter((m, i) => i !== from && m < mids[from] + dy).length;
+    others.forEach((r, i) => {
+      r.classList.toggle('drop-before', i === to);
+      r.classList.toggle('drop-after', to === others.length && i === others.length - 1);
+    });
+  };
+  const up = () => {
+    removeEventListener('pointermove', move);
+    removeEventListener('pointerup', up);
+    removeEventListener('pointercancel', up);
+    if (!moving) return select(o.id);
+    // Rows run front to back; graphics are drawn back to front.
+    others.splice(to, 0, row);
+    const order = others.map((r) => +r.dataset.id).reverse();
+    state.overlays.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    select(o.id);
+    renderTimeline();
+    save();
+  };
+  addEventListener('pointermove', move);
+  addEventListener('pointerup', up);
+  addEventListener('pointercancel', up);
 }
 
 function startBarDrag(e, o, clip, lane) {
@@ -2166,7 +2228,7 @@ function buildChips(select) {
     if (kind === 'font') {
       b.textContent = opt.textContent;
       b.style.fontFamily = `"${opt.textContent}"`;
-    } else if (kind === 'anim' || kind === 'fill' || kind === 'dir') {
+    } else if (kind === 'anim' || kind === 'fill' || kind === 'edges') {
       const name = kind !== 'anim' ? `${kind}-${opt.value}` : select.dataset.k === 'out' && opt.value === 'rise' ? 'a-drop' : `a-${opt.value}`;
       b.append(iconEl(name));
       b.className = 'icon';
