@@ -24,6 +24,8 @@ Everything runs in your browser. Videos are never uploaded anywhere.
 
 **Timeline zoom:** use the zoom slider by the play controls, pinch the timeline (trackpad or iPhone), or ⌘/Ctrl-scroll over it for finer control of handles and caption timing. The timeline scrolls sideways with layer names pinned, and follows the playhead while playing.
 
+**Placing and aligning:** Place on screen (a 3×3 grid in a graphic's settings; on a phone, Place on the right rail shows the spots on the video) puts a graphic in a corner, along an edge or in the centre, inside a margin, and clear of the app's buttons and captions when safe zones are on. Text aligns to the side it's placed on; covers go flush to the edges. When dragging, graphics snap to the frame's centre lines, the margins, and the edges and centres of other graphics, with guide lines. Arrow keys nudge (Shift for bigger steps).
+
 **Layers:** drag a graphic's name in the timeline up or down to change what sits in front.
 
 **Reframing a clip:** select a video clip (the rest of its picture shows dimmed around the frame), then drag the video to move it in the frame and pinch (or scroll) to zoom. Changing it at another moment adds a keyframe there, shown as a diamond on the clip. Each keyframe either **jumps** (holds, then cuts to the new framing) or **glides** (moves smoothly from the keyframe before). Drag a diamond to retime its keyframe (it snaps to the clip's ends and to where graphics start or end); hold Option/Alt while dragging to copy it instead.

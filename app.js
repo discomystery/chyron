@@ -1035,7 +1035,7 @@ function drawFrame(t, animate, paintBackground) {
 
 const wrap = $('#wrap');
 const sel = $('#sel');
-const guide = $('#guide');
+const guideV = $('#guideV'), guideH = $('#guideH');
 
 function fitStage() {
   const area = $('#stageArea');
@@ -1098,7 +1098,7 @@ function dragging(e, onMove, onEnd) {
 }
 
 wrap.addEventListener('pointerdown', (e) => {
-  if (e.target.closest('.empty') || exporting) return;
+  if (e.target.closest('.empty, .place-over') || exporting) return;
   const resize = e.target.classList.contains('grip'), resizeH = e.target.classList.contains('vgrip');
   const o = resize || resizeH ? selected() : hitTest(e);
   if (!o && !resize && !resizeH && (selectedClip() || gesture)) return reframe(e);
@@ -1107,6 +1107,8 @@ wrap.addEventListener('pointerdown', (e) => {
   const k = canvas.getBoundingClientRect().width;
   const kh = canvas.getBoundingClientRect().height;
   const { x: ox, y: oy, width: ow, h: oh } = o;
+  const box0 = o._box && { x: o._box.ix, w: o._box.iw, y: o._box.y, h: o._box.h };
+  const lines = snapLines(o);
   dragging(e, (dx, dy) => {
     if (resizeH) {
       o.h = clamp(oh + dy / kh, 0.02, 1);
@@ -1117,15 +1119,100 @@ wrap.addEventListener('pointerdown', (e) => {
     } else {
       o.x = clamp(ox + dx / k, -0.5, 1);
       o.y = clamp(oy + dy / kh, -0.1, 0.98);
-      const snap = Math.abs(o.x + o.width / 2 - 0.5) < 0.012;
-      if (snap) o.x = 0.5 - o.width / 2;
-      guide.hidden = !snap;
+      if (box0) snapDrag(o, ox, oy, box0, lines, canvas.width / k);
     }
   }, () => {
-    guide.hidden = true;
+    guideV.hidden = guideH.hidden = true;
     save();
   });
 });
+
+/* ---------- alignment ---------- */
+
+// The area graphics are placed in: a small margin, kept clear of the chosen app's buttons and captions
+// when safe zones are on. Covers go right to the edges, since they hide things in the video itself.
+function safeArea(o) {
+  if (COVERS.has(o.kind)) return { l: 0, t: 0, r: 1, b: 1 };
+  const a = { l: 0.05, t: 0.04, r: 0.95, b: 0.96 };
+  const zones = state.format === '9:16' && SAFE_ZONES[safeZone];
+  for (const [x, y, w, h] of zones || []) {
+    if (w > 0.99 && y < 0.01) a.t = Math.max(a.t, y + h + 0.015);
+    else if (w > 0.99) a.b = Math.min(a.b, y - 0.015);
+    else if (x > 0.5) a.r = Math.min(a.r, x - 0.015);
+  }
+  return a;
+}
+
+// Lines a dragged graphic snaps to, in frame pixels: the frame's centre lines, the safe area's edges,
+// and the edges and centres of the other graphics on screen.
+function snapLines(o) {
+  const W = canvas.width, H = canvas.height, a = safeArea(o);
+  const xs = [W / 2, a.l * W, a.r * W], ys = [H / 2, a.t * H, a.b * H];
+  for (const g of state.overlays) {
+    const b = g._box;
+    if (g === o || !b) continue;
+    xs.push(b.ix, b.ix + b.iw / 2, b.ix + b.iw);
+    ys.push(b.y, b.y + b.h / 2, b.y + b.h);
+  }
+  return { xs, ys };
+}
+
+// Nudges a dragged graphic onto the nearest line within a few screen pixels (left, centre or right
+// edge; top, middle or bottom) and shows a guide where it snapped.
+function snapDrag(o, ox, oy, box0, lines, pxPerScreen) {
+  const W = canvas.width, H = canvas.height, reach = 7 * pxPerScreen;
+  const nearest = (edges, targets) => {
+    let best = null;
+    for (const e of edges) for (const t of targets) if (Math.abs(t - e) < reach && (!best || Math.abs(t - e) < Math.abs(best.d))) best = { d: t - e, at: t };
+    return best;
+  };
+  const left = box0.x + (o.x - ox) * W, top = box0.y + (o.y - oy) * H;
+  const sx = nearest([left, left + box0.w / 2, left + box0.w], lines.xs);
+  const sy = nearest([top, top + box0.h / 2, top + box0.h], lines.ys);
+  if (sx) o.x += sx.d / W;
+  if (sy) o.y += sy.d / H;
+  guideV.hidden = !sx;
+  guideH.hidden = !sy;
+  if (sx) guideV.style.left = `${(sx.at / W) * 100}%`;
+  if (sy) guideH.style.top = `${(sy.at / H) * 100}%`;
+}
+
+// Puts a graphic in one of nine spots in the safe area. Text lines up with the side it's placed on.
+const ALIGNS = new Set(['lines', 'lower', 'quote', 'text']);
+function placeAt(o, row, col) {
+  if (!o) return;
+  const a = safeArea(o), w = Math.min(o.width, a.r - a.l);
+  if (ALIGNS.has(o.kind)) o.align = col;
+  o.width = w;
+  // Measure after any narrowing, since text can wrap onto more lines.
+  drawFrame(T, false, () => ctx.drawImage(bgCanvas, 0, 0));
+  const h = o._box ? o._box.h / canvas.height : 0.1;
+  o.x = col === 'left' ? a.l : col === 'center' ? 0.5 - w / 2 : a.r - w;
+  o.y = row === 'top' ? a.t : row === 'middle' ? (a.t + a.b) / 2 - h / 2 : a.b - h;
+  fillInspector();
+  save();
+}
+
+function placeButtons(box, onPick) {
+  box.replaceChildren(...['top', 'middle', 'bottom'].flatMap((row) => ['left', 'center', 'right'].map((col) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `p-${row} p-${col}`;
+    const name = row === 'middle' && col === 'center' ? 'centre' : `${row === 'middle' ? 'middle' : row} ${col === 'center' ? 'centre' : col}`;
+    b.title = `Place ${name}`;
+    b.setAttribute('aria-label', `Place ${name}`);
+    b.append(document.createElement('i'));
+    b.onclick = () => onPick(row, col);
+    return b;
+  })));
+}
+placeButtons($('#place'), (row, col) => placeAt(selected(), row, col));
+// On a phone, the nine spots appear right on the video.
+placeButtons($('#placeOver'), (row, col) => {
+  placeAt(selected(), row, col);
+  $('#placeOver').hidden = true;
+});
+$('#railPlace').onclick = () => ($('#placeOver').hidden = !$('#placeOver').hidden || !selected());
 
 // With a clip selected, dragging the video moves it in the frame and pinching zooms.
 // The change lands on a keyframe at the playhead, made there if needed.
@@ -1302,6 +1389,7 @@ const props = $('#props');
 const clipProps = $('#clipProps');
 
 function select(id) {
+  $('#placeOver').hidden = true;
   selectedId = id;
   selectedClipId = null;
   if (id) showAddSheet(false);

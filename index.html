@@ -104,7 +104,9 @@
     </div>
     <div class="wrap" id="wrap">
       <canvas id="stage" width="1080" height="1920"></canvas>
-      <div class="guide" id="guide" hidden></div>
+      <div class="guide v" id="guideV" hidden></div>
+      <div class="guide h" id="guideH" hidden></div>
+      <div class="place-over" id="placeOver" hidden aria-label="Place on screen"></div>
       <div class="safe" id="safe" hidden aria-hidden="true"></div>
       <div class="sel" id="sel" hidden><i class="grip" title="Drag to change width"></i><i class="vgrip" title="Drag to change height"></i></div>
       <div class="empty" id="empty">
@@ -119,6 +121,7 @@
         <button data-proxy="brandBtn"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg><span>Brand</span></button>
       </div>
       <div id="railGraphic" hidden>
+        <button id="railPlace"><svg class="ic" aria-hidden="true"><use href="#i-place"/></svg><span>Place</span></button>
         <button data-proxy="dup"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button>
         <button data-proxy="front"><svg class="ic" aria-hidden="true"><use href="#i-front"/></svg><span>Front</span></button>
         <button data-proxy="saveStyle"><svg class="ic" aria-hidden="true"><use href="#i-style"/></svg><span>Style</span></button>
@@ -190,6 +193,9 @@
           <button type="button" data-v="center" title="Center" aria-label="Align center"><svg class="ic" aria-hidden="true"><use href="#i-center"/></svg></button>
           <button type="button" data-v="right" title="Right" aria-label="Align right"><svg class="ic" aria-hidden="true"><use href="#i-right"/></svg></button>
         </div>
+      </div>
+      <div class="f place-f" data-group="style"><span class="w">Place on screen</span>
+        <div class="place" id="place" role="group" aria-label="Place on screen"></div>
       </div>
       <label class="check caps" data-group="style" data-for="lines lower quote text" title="All capitals"><input data-k="upper" type="checkbox"> <span class="w">All capitals</span><b class="caps-ic" aria-hidden="true">AA</b></label>
 

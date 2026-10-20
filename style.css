@@ -257,7 +257,22 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
 .safe { position: absolute; inset: 0; pointer-events: none; }
 .safe div { position: absolute; background: rgba(255, 71, 59, 0.16); outline: 1px dashed rgba(255, 140, 130, 0.8); outline-offset: -1px; }
 .safe div::after { content: attr(data-label); position: absolute; left: 4px; top: 3px; padding: 1px 5px; background: rgba(13, 18, 32, 0.8); border-radius: 3px; color: #ffb4ad; font-size: 10px; font-weight: 600; white-space: nowrap; }
-.guide { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--flash); pointer-events: none; }
+.guide { position: absolute; z-index: 1; background: var(--flash); box-shadow: 0 0 4px rgba(255, 212, 0, 0.8); pointer-events: none; }
+.guide.v { top: 0; bottom: 0; width: 1px; margin-left: -0.5px; }
+.guide.h { left: 0; right: 0; height: 1px; margin-top: -0.5px; }
+/* Nine spots to place a graphic: a small grid in the panel, and on a phone, over the video. */
+.place { display: grid; grid-template-columns: repeat(3, 30px); gap: 3px; margin-top: 5px; }
+.place button { position: relative; width: 30px; height: 24px; padding: 0; border-radius: 4px; }
+.place button i, .place-over button i { position: absolute; width: 10px; height: 6px; background: var(--muted); border-radius: 1px; }
+.place button:hover i, .place-over button:hover i { background: var(--ink); }
+.p-top i { top: 4px; } .p-middle i { top: calc(50% - 3px); } .p-bottom i { bottom: 4px; }
+.p-left i { left: 4px; } .p-center i { left: calc(50% - 5px); } .p-right i { right: 4px; }
+.place-over { position: absolute; inset: 0; z-index: 2; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); gap: 2px; padding: 2px; background: rgba(13, 18, 32, 0.45); }
+.place-over[hidden] { display: none; }
+.place-over button { position: relative; padding: 0; background: rgba(34, 42, 66, 0.55); border: 1px dashed rgba(255, 255, 255, 0.35); border-radius: 4px; }
+.place-over button i { width: 40%; height: 14%; background: rgba(255, 255, 255, 0.85); }
+.place-over .p-top i { top: 10%; } .place-over .p-middle i { top: 43%; } .place-over .p-bottom i { bottom: 10%; }
+.place-over .p-left i { left: 8%; } .place-over .p-center i { left: 30%; } .place-over .p-right i { right: 8%; }
 .empty {
   position: absolute;
   top: 9%;
@@ -770,6 +785,8 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   .tr-line { grid-template-columns: 54px minmax(0, 1fr); }
   .tr-tools { grid-column: 2; justify-content: flex-end; }
   .tr-tools button { width: 40px; height: 36px; }
+
+  .place-f { display: none !important; } /* on a phone, Place on the rail puts the spots on the video */
 
   /* The tab strip. */
   .edit-tabs { display: flex; flex: none; padding: 0 6px max(0px, env(safe-area-inset-bottom)); background: var(--desk); border-top: 1px solid var(--line); }
