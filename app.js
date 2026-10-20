@@ -30,7 +30,11 @@ const PRESETS = {
   image: { name: 'Image', kind: 'image', width: 0.4, x: 0.3, y: 0.3 },
   subtitles: { name: 'Subtitles', kind: 'lines', size: 50, y: 0.72, align: 'center', anim: 'none', out: 'none', offset: 0 },
   logo: { name: 'Logo', kind: 'image', width: 0.2, x: 0.74, y: 0.04, anim: 'none', out: 'none' },
+  // Covers hide part of the video, such as another channel's captions.
+  cover: { name: 'Cover', kind: 'gradient', width: 1, x: 0, y: 0.72, h: 0.28, bg: '$dark', dir: 'bottom', fade: 0.55, blur: 0.5 },
 };
+const COVERS = new Set(['solid', 'gradient', 'blur']);
+const COVER_NAMES = { solid: 'Solid cover', gradient: 'Gradient cover', blur: 'Blur' };
 
 let state = { format: '9:16', fit: 'cover', clips: [], overlays: [], brand: { ...DEFAULT_BRAND }, styles: [], layouts: [], fonts: [], assets: {} };
 let selectedId = null;
@@ -726,6 +730,10 @@ const LAYOUTS = {
     };
   },
 
+  solid: coverLayout,
+  gradient: coverLayout,
+  blur: coverLayout,
+
   // A picture or logo.
   image(o, text, bx, by, bw) {
     const img = getImage(o.asset);
@@ -743,6 +751,63 @@ const LAYOUTS = {
     };
   },
 };
+
+// A box that hides part of the video: a solid color, a color fading out from one edge, or a blur.
+function coverLayout(o, text, bx, by, bw, u) {
+  const bh = o.h * canvas.height;
+  return {
+    x: bx, y: by, w: bw, h: bh, ix: bx, iw: bw,
+    paint() {
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bw, bh, (o.radius * Math.min(bw, bh)) / 2);
+      ctx.clip();
+      if (o.kind === 'blur') return blurRegion(bx, by, bw, bh, (3 + o.blur * 45) * u);
+      ctx.globalAlpha *= o.bgAlpha;
+      if (o.kind === 'solid') ctx.fillStyle = o.bg;
+      else {
+        // The gradient runs from clear at the open edge to solid at the chosen edge.
+        const [x0, y0, x1, y1] = {
+          bottom: [0, by, 0, by + bh], top: [0, by + bh, 0, by],
+          right: [bx, 0, bx + bw, 0], left: [bx + bw, 0, bx, 0],
+        }[o.dir] || [0, by, 0, by + bh];
+        const g = ctx.createLinearGradient(x0, y0, x1, y1);
+        g.addColorStop(0, withAlpha(o.bg, 0));
+        g.addColorStop(clamp(o.fade, 0.05, 1), withAlpha(o.bg, 1));
+        g.addColorStop(1, withAlpha(o.bg, 1));
+        ctx.fillStyle = g;
+      }
+      ctx.fillRect(bx, by, bw, bh);
+    },
+  };
+}
+
+function withAlpha(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
+}
+
+// Blurs what has been drawn so far inside a box. Browsers without canvas filters (older Safari)
+// get a soft blur from shrinking the area and stretching it back.
+let blurScratch;
+function blurRegion(x, y, w, h, r) {
+  const W = canvas.width, H = canvas.height;
+  const sx = clamp(x - r * 2, 0, W), sy = clamp(y - r * 2, 0, H);
+  const sw = clamp(x + w + r * 2, 0, W) - sx, sh = clamp(y + h + r * 2, 0, H) - sy;
+  if (sw < 1 || sh < 1) return;
+  if ('filter' in ctx) {
+    ctx.filter = `blur(${r}px)`;
+    ctx.drawImage(ctx.canvas, sx, sy, sw, sh, sx, sy, sw, sh);
+    ctx.filter = 'none';
+    return;
+  }
+  const k = 1 / Math.max(2, r / 2);
+  blurScratch = blurScratch || document.createElement('canvas');
+  blurScratch.width = Math.max(1, Math.round(sw * k));
+  blurScratch.height = Math.max(1, Math.round(sh * k));
+  blurScratch.getContext('2d').drawImage(ctx.canvas, sx, sy, sw, sh, 0, 0, blurScratch.width, blurScratch.height);
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(blurScratch, sx, sy, sw, sh);
+}
 
 // Entrance and exit effects; p runs 0 (hidden) to 1 (fully shown).
 function applyEffect(type, p, L, u) {
@@ -868,6 +933,7 @@ function updateSel() {
   const b = o && o._box;
   sel.hidden = !b || exporting;
   if (sel.hidden) return;
+  sel.classList.toggle('tall', COVERS.has(o.kind));
   const k = wrap.clientWidth / canvas.width;
   sel.style.left = `${b.x * k - 4}px`;
   sel.style.top = `${b.y * k - 4}px`;
@@ -904,16 +970,19 @@ function dragging(e, onMove, onEnd) {
 
 wrap.addEventListener('pointerdown', (e) => {
   if (e.target.closest('.empty') || exporting) return;
-  const resize = e.target.classList.contains('grip');
-  const o = resize ? selected() : hitTest(e);
-  if (!o && !resize && (selectedClip() || gesture)) return reframe(e);
-  if (!resize) select(o ? o.id : null);
+  const resize = e.target.classList.contains('grip'), resizeH = e.target.classList.contains('vgrip');
+  const o = resize || resizeH ? selected() : hitTest(e);
+  if (!o && !resize && !resizeH && (selectedClip() || gesture)) return reframe(e);
+  if (!resize && !resizeH) select(o ? o.id : null);
   if (!o) return;
   const k = canvas.getBoundingClientRect().width;
   const kh = canvas.getBoundingClientRect().height;
-  const { x: ox, y: oy, width: ow } = o;
+  const { x: ox, y: oy, width: ow, h: oh } = o;
   dragging(e, (dx, dy) => {
-    if (resize) {
+    if (resizeH) {
+      o.h = clamp(oh + dy / kh, 0.02, 1);
+      fillInspector();
+    } else if (resize) {
       o.width = clamp(ow + dx / k, 0.05, 1);
       fillInspector();
     } else {
@@ -1186,7 +1255,10 @@ props.addEventListener('input', (e) => {
     if (cue) cue.text = el.value;
   } else o[k] = el.value;
   if (['text', 'start', 'end', 'offset'].includes(k)) renderTimeline();
-  if (k === 'kind') fillInspector();
+  if (k === 'kind') {
+    fillInspector();
+    renderTimeline();
+  }
   save();
 });
 
@@ -1495,7 +1567,7 @@ $('#removeLogo').onclick = () => {
 /* ---------- timeline ---------- */
 
 const rowsEl = $('#rows');
-const TYPE_ICONS = { headline: 'headline', label: 'label', lower: 'lower', quote: 'quote', credit: 'credit', text: 'text', image: 'image', logo: 'logo', subtitles: 'subs' };
+const TYPE_ICONS = { headline: 'headline', label: 'label', lower: 'lower', quote: 'quote', credit: 'credit', text: 'text', image: 'image', logo: 'logo', subtitles: 'subs', cover: 'cover' };
 const ruler = $('#ruler');
 const pct = (t) => `${(t / duration) * 100}%`;
 
@@ -1563,7 +1635,7 @@ function renderTimeline() {
     row.className = 'row';
     row.dataset.id = o.id;
     const name = document.createElement('span');
-    name.textContent = o.text.split('\n')[0].replace(/\*/g, '') || PRESETS[o.type].name;
+    name.textContent = COVERS.has(o.kind) ? COVER_NAMES[o.kind] : o.text.split('\n')[0].replace(/\*/g, '') || PRESETS[o.type].name;
     if (o.cues) name.textContent += ` (${o.cues.length})`;
     name.prepend(iconEl(TYPE_ICONS[o.type]));
     name.onclick = () => select(o.id);
@@ -2069,8 +2141,8 @@ function buildChips(select) {
     if (kind === 'font') {
       b.textContent = opt.textContent;
       b.style.fontFamily = `"${opt.textContent}"`;
-    } else if (kind === 'anim') {
-      const name = select.dataset.k === 'out' && opt.value === 'rise' ? 'a-drop' : `a-${opt.value}`;
+    } else if (kind === 'anim' || kind === 'fill' || kind === 'dir') {
+      const name = kind !== 'anim' ? `${kind}-${opt.value}` : select.dataset.k === 'out' && opt.value === 'rise' ? 'a-drop' : `a-${opt.value}`;
       b.append(iconEl(name));
       b.className = 'icon';
     } else b.textContent = SPEED_MARKS[i] || opt.textContent;
@@ -2101,7 +2173,7 @@ props.querySelector('.colors').addEventListener('click', (e) => {
   syncColorTarget();
 });
 function syncColorTarget() {
-  if (colorInput(colorTarget).closest('[hidden]')) colorTarget = 'color';
+  if (colorInput(colorTarget).closest('[hidden]')) colorTarget = ['color', 'bg', 'accent'].find((k) => !colorInput(k).closest('[hidden]')) || 'color';
   props.querySelectorAll('.colors label').forEach((l) => l.classList.toggle('on', l.querySelector('input').dataset.k === colorTarget));
   const o = selected(), now = o && String(o[colorTarget]).toLowerCase();
   $('#brandDots').querySelectorAll('button[data-c]').forEach((b) => b.classList.toggle('on', b.dataset.c.toLowerCase() === now));

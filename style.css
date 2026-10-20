@@ -173,6 +173,8 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
 .t-quote b { padding: 6px 8px; background: #111; border-left: 3px solid var(--flash); color: #fff; font: 600 12px "Newsreader", serif; }
 .t-credit { justify-content: flex-end; padding-bottom: 8px; }
 .t-credit b { color: #fff; font-size: 10px; font-weight: 600; text-shadow: 0 1px 3px #000; }
+.t-cover { justify-content: flex-end; align-items: stretch; padding: 0; }
+.t-cover b { height: 70%; background: linear-gradient(rgba(13, 18, 32, 0), #0d1220 70%); }
 .t-text b { color: #fff; font-size: 15px; font-weight: 800; text-shadow: 0 1px 4px #000; }
 
 .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
@@ -222,6 +224,22 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
   cursor: ew-resize;
   pointer-events: auto;
 }
+/* Covers also resize from the bottom edge. */
+.sel .vgrip {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  display: none;
+  width: 30px;
+  height: 13px;
+  margin-left: -15px;
+  background: #fff;
+  border: 2px solid var(--signal);
+  border-radius: 4px;
+  cursor: ns-resize;
+  pointer-events: auto;
+}
+.sel.tall .vgrip { display: block; }
 .guide { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--flash); pointer-events: none; }
 .empty {
   position: absolute;
@@ -656,4 +674,5 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   .clip::before, .vclip::before { background: linear-gradient(to right, transparent 4px, #fff 4px 8px, transparent 8px); }
   .clip::after, .vclip::after { background: linear-gradient(to left, transparent 4px, #fff 4px 8px, transparent 8px); }
   .sel .grip { right: -11px; width: 18px; height: 38px; margin-top: -19px; }
+  .sel .vgrip { bottom: -11px; width: 38px; height: 18px; margin-left: -19px; }
 }
