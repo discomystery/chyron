@@ -1713,11 +1713,13 @@ function markSelection() {
   rowsEl.querySelectorAll('.vclip').forEach((el) => el.classList.toggle('on', +el.dataset.id === selectedClipId));
 }
 
-function renderTimeline() {
-  const step = [0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300].find((s) => duration / s <= 12) || 600;
+// Time marks along the top; finer as the timeline is zoomed in.
+function renderRuler() {
+  const span = duration / tlZoom;
+  const step = [0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300].find((s) => span / s <= 10) || 600;
   ruler.innerHTML = '';
-  for (let t = 0; t < duration; t += step) {
-    const tick = document.createElement('i');
+  for (let n = 0; n * step < duration; n++) {
+    const t = n * step, tick = document.createElement('i');
     tick.style.left = pct(t);
     tick.textContent = step < 1 ? fmt(t) : fmt(t).slice(0, -2);
     ruler.append(tick);
@@ -1729,6 +1731,11 @@ function renderTimeline() {
     mark.title = 'Cover image';
     ruler.append(mark);
   }
+}
+
+function renderTimeline() {
+  layoutZoom();
+  renderRuler();
   rowsEl.innerHTML = '';
 
   if (hasVideo) {
@@ -1789,11 +1796,7 @@ function renderTimeline() {
         cue.style.left = pct(start);
         cue.style.width = pct(end - start);
         cue.title = c.text;
-        cue.onpointerdown = () => {
-          select(o.id);
-          setTime(start + 0.01);
-          fillInspector();
-        };
+        cue.onpointerdown = (e) => dragCue(e, o, c, start, cue, lane);
         lane.append(cue);
       }
     } else {
@@ -1949,6 +1952,114 @@ function dragKey(e, s, k, diamond, bar) {
   addEventListener('pointermove', move);
   addEventListener('pointerup', up);
   addEventListener('pointercancel', up);
+}
+
+// Caption and subtitle lines: tap to go to one; drag an end to change when it starts or stops,
+// or the middle to move it. Lines can't overlap their neighbours. Word timings stretch to fit.
+function dragCue(e, o, c, start, el, lane) {
+  e.preventDefault();
+  if (exporting) return;
+  select(o.id);
+  const px = e.clientX - el.getBoundingClientRect().left;
+  const grip = Math.min(GRIP, el.offsetWidth / 3);
+  const edge = px < grip ? 'start' : px > el.offsetWidth - grip ? 'end' : 'move';
+  const s0 = c.start, e0 = c.end, w0 = c.words && c.words.map((w) => [...w]);
+  const sorted = [...o.cues].sort((a, b) => a.start - b.start), i = sorted.indexOf(c);
+  const lo = sorted[i - 1] ? sorted[i - 1].end : -Infinity, hi = sorted[i + 1] ? sorted[i + 1].start : Infinity;
+  const pxPerSec = lane.clientWidth / duration;
+  let moved = false;
+  dragging(e, (dx) => {
+    if (!moved && Math.abs(dx) < 4) return;
+    moved = true;
+    const dt = dx / pxPerSec;
+    if (edge === 'start') c.start = clamp(s0 + dt, lo, c.end - 0.1);
+    else if (edge === 'end') c.end = clamp(e0 + dt, c.start + 0.1, hi);
+    else {
+      const d = clamp(dt, lo - s0, hi - e0);
+      c.start = s0 + d;
+      c.end = e0 + d;
+    }
+    if (w0) {
+      const k = (c.end - c.start) / (e0 - s0);
+      c.words = w0.map(([a, b]) => [c.start + (a - s0) * k, c.start + (b - s0) * k]);
+    }
+    el.style.left = pct(start + (c.start - s0));
+    el.style.width = pct(c.end - c.start);
+    const at = edge === 'end' ? start + (c.end - s0) - 0.02 : start + (c.start - s0) + 0.01;
+    setTime(at);
+    keyTip.hidden = false;
+    keyTip.textContent = `${edge === 'end' ? 'Ends' : 'Starts'} ${fmt(at)}`;
+    keyTip.style.left = `${e.clientX + dx}px`;
+    keyTip.style.top = `${lane.getBoundingClientRect().top}px`;
+  }, () => {
+    keyTip.hidden = true;
+    if (!moved) setTime(start + 0.01);
+    else {
+      renderTimeline();
+      save();
+    }
+    fillInspector();
+  });
+}
+
+/* ---------- timeline zoom ---------- */
+
+// Zooming widens every lane together; the timeline scrolls sideways and the layer names stay put.
+const tracksEl = $('#tracks');
+let tlZoom = 1;
+const maxZoom = () => clamp(duration / 1.5, 1, 100);
+const laneStart = () => parseFloat(getComputedStyle(tracksEl).paddingLeft) + parseFloat(getComputedStyle(tracksEl).getPropertyValue('--label-w'));
+
+function layoutZoom() {
+  tlZoom = clamp(tlZoom, 1, maxZoom());
+  const cs = getComputedStyle(tracksEl);
+  const room = tracksEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - parseFloat(cs.getPropertyValue('--label-w'));
+  tracksEl.style.setProperty('--lane-w', `${Math.max(40, room * tlZoom)}px`);
+  const slider = $('#tlZoom');
+  if (slider !== document.activeElement) slider.value = maxZoom() > 1 ? Math.log(tlZoom) / Math.log(maxZoom()) : 0;
+  $('#tlOut').disabled = tlZoom <= 1;
+  $('#tlIn').disabled = tlZoom >= maxZoom();
+}
+
+// Zooms while keeping one moment fixed under the pointer, or the playhead centred.
+function setZoom(z, clientX) {
+  const r = tracksEl.getBoundingClientRect();
+  const w0 = ruler.offsetWidth;
+  const offset = clientX != null ? clientX - r.left : laneStart() + (tracksEl.clientWidth - laneStart()) / 2;
+  const t = clientX != null ? ((tracksEl.scrollLeft + offset - laneStart()) / w0) * duration : T;
+  tlZoom = clamp(z, 1, maxZoom());
+  layoutZoom();
+  renderRuler();
+  tracksEl.scrollLeft = laneStart() + (t / duration) * ruler.offsetWidth - offset;
+}
+
+$('#tlZoom').oninput = (e) => setZoom(maxZoom() ** +e.target.value);
+$('#tlIn').onclick = () => setZoom(tlZoom * 1.6);
+$('#tlOut').onclick = () => setZoom(tlZoom / 1.6);
+// Trackpad pinch (and Ctrl/⌘-scroll) on the timeline zooms it.
+tracksEl.addEventListener('wheel', (e) => {
+  if (!e.ctrlKey && !e.metaKey) return;
+  e.preventDefault();
+  setZoom(tlZoom * Math.exp(-e.deltaY * 0.01), e.clientX);
+}, { passive: false });
+// Safari sends pinches on Mac trackpads and iPhone screens as gestures.
+let pinchFrom = 1;
+tracksEl.addEventListener('gesturestart', (e) => {
+  e.preventDefault();
+  pinchFrom = tlZoom;
+});
+tracksEl.addEventListener('gesturechange', (e) => {
+  e.preventDefault();
+  setZoom(pinchFrom * e.scale, e.clientX);
+});
+new ResizeObserver(() => layoutZoom()).observe(tracksEl);
+
+// While playing zoomed in, the view pages along to keep the playhead in sight.
+function followPlayhead() {
+  if (!playing || tlZoom <= 1) return;
+  const x = laneStart() + (T / duration) * ruler.offsetWidth;
+  const left = tracksEl.scrollLeft + laneStart(), right = tracksEl.scrollLeft + tracksEl.clientWidth - 24;
+  if (x < left || x > right) tracksEl.scrollLeft = x - laneStart() - 24;
 }
 
 function startTrim(e, s, el, lane) {
@@ -2510,6 +2621,7 @@ function tick(ts) {
     fillInspector();
   }
   $('#playhead').style.left = pct(T);
+  followPlayhead();
   $('#time').textContent = fmt(T);
   $('#total').textContent = fmt(duration);
   if (playing !== shownPlaying) {
@@ -2572,8 +2684,66 @@ $('#addCaptions').onclick = () => {
   showAddSheet(false);
   showCaptionPrefs();
   captionStatus('');
+  showModelStore();
   captionDlg.showModal();
 };
+
+// The speech model lives in the browser's own storage: transformers.js keeps it in 'transformers-cache',
+// and the service worker keeps the speech library from jsDelivr alongside the app's files.
+const MODEL_CACHE = 'transformers-cache';
+const isEngineFile = (url) => url.includes('cdn.jsdelivr.net/npm/@huggingface/') || url.includes('cdn.jsdelivr.net/npm/onnxruntime-web');
+
+async function modelBytes() {
+  let bytes = 0, found = false;
+  for (const name of await caches.keys()) {
+    if (name !== MODEL_CACHE && !name.startsWith('chyron-')) continue;
+    const cache = await caches.open(name);
+    for (const req of await cache.keys()) {
+      if (name !== MODEL_CACHE && !isEngineFile(req.url)) continue;
+      found = true;
+      const res = await cache.match(req);
+      bytes += +(res && res.headers.get('content-length')) || 0;
+    }
+  }
+  return found ? bytes : null;
+}
+
+async function showModelStore() {
+  const box = $('#modelStore');
+  box.hidden = true;
+  if (!('caches' in window)) return;
+  try {
+    const bytes = await modelBytes();
+    if (bytes === null) return;
+    const kept = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted() : false;
+    const size = bytes ? ` (${Math.round(bytes / 1e6)} MB)` : '';
+    $('#modelInfo').textContent = `Speech model saved on this device${size}${kept ? ', protected from automatic clean-up' : ''}.`;
+    box.hidden = false;
+  } catch (err) {
+    console.warn('Could not read the speech model cache:', err);
+  }
+}
+
+$('#modelRemove').onclick = async () => {
+  if (captioning) return;
+  if (captionWorker) captionWorker.terminate();
+  captionWorker = null;
+  await caches.delete(MODEL_CACHE);
+  for (const name of await caches.keys()) {
+    if (!name.startsWith('chyron-')) continue;
+    const cache = await caches.open(name);
+    for (const req of await cache.keys()) if (isEngineFile(req.url)) await cache.delete(req);
+  }
+  $('#modelStore').hidden = true;
+  toast('Speech model removed. It downloads again the next time you make captions.');
+};
+
+// Asks the browser not to clear Chyron's storage (saved work, speech model) when space runs low.
+// Firefox asks the person, so there it only happens when making captions.
+function keepStorage() {
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+}
+if (!/Firefox/.test(navigator.userAgent)) keepStorage();
 $('#capCancel').onclick = () => {
   if (captioning) stopCaptions();
   captionDlg.close();
@@ -2679,6 +2849,7 @@ function captionCues(words, max) {
 $('#capGo').onclick = async () => {
   if (captioning) return;
   if (!MB) return captionStatus('Captions need a newer browser.');
+  keepStorage();
   captioning = true;
   $('#capGo').disabled = true;
   const made = [];

@@ -24,6 +24,7 @@ html, body { height: 100%; margin: 0; }
 body {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr); /* wide content (a zoomed timeline) scrolls instead of widening the page */
   background: var(--desk);
   color: var(--ink);
   font: 14px/1.4 "Archivo", system-ui, sans-serif;
@@ -362,6 +363,9 @@ textarea:disabled { background: transparent; }
 #captionDlg .seg button[aria-pressed="true"] { background: var(--signal); border-color: var(--signal); color: #fff; }
 #captionDlg .num { margin-top: 5px; }
 .cap-status { margin: 4px 0 6px; }
+.model-store { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; padding: 8px 10px; background: #0f1525; border: 1px solid var(--line); border-radius: 8px; font-size: 12px; color: var(--muted); }
+.model-store span { flex: 1; }
+.model-store button { padding: 5px 10px; font-size: 12px; }
 .cap-status p { margin: 0 0 8px; font-size: 13px; color: var(--ink); }
 #capBar.busy i { width: 35% !important; animation: busy 1.2s ease-in-out infinite alternate; }
 @keyframes busy { from { margin-left: 0; } to { margin-left: 65%; } }
@@ -389,6 +393,8 @@ select.wide { display: block; }
   color: var(--desk);
 }
 #play:hover { background: #fff; transform: scale(1.06); }
+.tl-zoom { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.tl-zoom input { width: 140px; accent-color: var(--signal); }
 #play .ic { width: 18px; height: 18px; }
 /* Timecode readout, like the counter on a tape deck. */
 .timecode {
@@ -406,9 +412,12 @@ select.wide { display: block; }
 .timecode span::before { content: "of "; }
 .time { font-variant-numeric: tabular-nums; color: var(--muted); }
 
-.tracks { position: relative; max-height: 208px; overflow-y: auto; padding: 0 16px 12px; scrollbar-width: thin; }
-.row { display: grid; grid-template-columns: var(--label-w) minmax(0, 1fr); align-items: center; height: 30px; }
+.tracks { position: relative; max-height: 208px; overflow: auto; padding: 0 16px 12px; scrollbar-width: thin; overscroll-behavior-x: contain; }
+.row { --rh: 30px; display: grid; grid-template-columns: var(--label-w) var(--lane-w, minmax(0, 1fr)); align-items: center; width: max-content; min-width: 100%; height: var(--rh); }
 .row > span { padding-right: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--muted); cursor: pointer; }
+/* Layer names stay pinned on the left while a zoomed timeline scrolls under them,
+   each filling its row (and the margin beside it) so nothing shows through. */
+.row > span { position: sticky; left: -16px; z-index: 3; align-self: stretch; margin-left: -16px; padding-left: 16px; line-height: var(--rh); background: var(--panel); }
 .row > span .ic { margin-right: 7px; color: #6f7ca3; }
 .row > span:hover { color: var(--ink); }
 /* Layer names double as drag handles for reordering. */
@@ -419,9 +428,9 @@ select.wide { display: block; }
 .row.drop-after { box-shadow: inset 0 -2px 0 var(--flash); }
 .row.on > span { color: var(--ink); font-weight: 700; }
 .row.on > span .ic { color: var(--signal); }
-.row.video { height: 36px; }
+.row.video { --rh: 36px; }
 .lane { position: relative; height: 100%; border-top: 1px solid #202842; overflow: hidden; }
-.ruler-row { height: 24px; }
+.ruler-row { --rh: 24px; }
 .ruler { position: relative; height: 100%; cursor: pointer; touch-action: none; }
 .ruler i { position: absolute; bottom: 0; padding: 0 0 2px 5px; border-left: 1px solid #46527a; font-style: normal; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; pointer-events: none; }
 
@@ -439,7 +448,11 @@ select.wide { display: block; }
 .clip:hover, .vclip:hover, .cue:hover { filter: brightness(1.18); }
 .clip:active { cursor: grabbing; }
 .row.on .clip { background: linear-gradient(#5a82ff, var(--signal-deep)); box-shadow: 0 0 12px rgba(68, 112, 255, 0.45); }
-.cue { position: absolute; top: 7px; bottom: 7px; min-width: 2px; background: #56628c; border-right: 1px solid var(--panel); border-radius: 2px; cursor: pointer; }
+.cue { position: absolute; top: 7px; bottom: 7px; min-width: 2px; background: #56628c; border-right: 1px solid var(--panel); border-radius: 2px; cursor: pointer; touch-action: none; }
+/* Grips on the selected layer's lines, once they're wide enough to grab. */
+.row.on .cue::before, .row.on .cue::after { content: ""; position: absolute; top: 3px; bottom: 3px; width: 2px; background: rgba(255, 255, 255, 0.85); border-radius: 1px; }
+.row.on .cue::before { left: 2px; }
+.row.on .cue::after { right: 2px; }
 .row.on .cue { background: var(--signal); }
 
 /* Video clips carry a strip of sprocket holes along both edges. */
@@ -510,7 +523,7 @@ select.wide { display: block; }
 .clip::after, .vclip::after { right: 0; background: linear-gradient(to left, transparent 3px, #fff 3px 6px, transparent 6px); }
 .clip:hover::before, .clip:hover::after, .vclip:hover::before, .vclip:hover::after, .row.on .clip::before, .row.on .clip::after, .vclip.on::before, .vclip.on::after { opacity: 1; }
 
-.lanes { position: absolute; top: 0; bottom: 0; left: calc(16px + var(--label-w)); right: 16px; pointer-events: none; }
+.lanes { position: absolute; top: 0; bottom: 0; left: calc(16px + var(--label-w)); width: var(--lane-w); z-index: 2; pointer-events: none; }
 .playhead { position: absolute; top: 4px; bottom: 0; width: 2px; margin-left: -1px; background: var(--tally); box-shadow: 0 0 8px rgba(255, 71, 59, 0.7); }
 .playhead::before { content: ""; position: absolute; top: -4px; left: -5px; width: 12px; height: 12px; background: var(--tally); border-radius: 3px 3px 6px 6px; }
 .no-rows { margin: 0; padding: 8px 0; color: var(--muted); font-size: 13px; }
@@ -607,7 +620,16 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   .transport { padding: 6px 12px; }
   #play { width: 36px; height: 36px; }
   .tracks { max-height: 15dvh; padding: 0 12px 6px; }
-  .lanes { left: calc(12px + var(--label-w)); right: 12px; }
+  .lanes { left: calc(12px + var(--label-w)); }
+  .row > span { left: -12px; margin-left: -12px; padding-left: 12px; }
+  .transport { gap: 6px; }
+  #play, #mute { flex: none; }
+  .timecode { flex: none; gap: 5px; padding: 4px 8px; white-space: nowrap; }
+  .timecode b { font-size: 16px; }
+  .timecode span { font-size: 11px; }
+  .tl-zoom { gap: 2px; }
+  .tl-zoom button { width: 34px; height: 34px; padding: 0; }
+  .tl-zoom input { width: 60px; }
 
   /* Rails of tools in the space beside a tall video. */
   .rail { display: grid; grid-auto-rows: 44px; grid-template-columns: 46px; align-content: center; gap: 5px; max-height: 100%; overflow-y: auto; scrollbar-width: none; }
@@ -736,8 +758,8 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
 /* Fingers need bigger handles than a mouse pointer. */
 @media (pointer: coarse) {
   button, summary { touch-action: manipulation; }
-  .row { height: 38px; }
-  .row.video { height: 42px; }
+  .row { --rh: 38px; }
+  .row.video { --rh: 42px; }
   .clip::before, .clip::after, .vclip::before, .vclip::after { width: 18px; opacity: 1; }
   .clip::before, .vclip::before { background: linear-gradient(to right, transparent 4px, #fff 4px 8px, transparent 8px); }
   .clip::after, .vclip::after { background: linear-gradient(to left, transparent 4px, #fff 4px 8px, transparent 8px); }

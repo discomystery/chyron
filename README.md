@@ -14,13 +14,15 @@ Everything runs in your browser. Videos are never uploaded anywhere.
 
 **Subtitles:** add an SRT or VTT file and the lines follow the video they were made for, so they stay in sync when you trim, split or reorder clips. For subtitles made from the finished edit, set them to follow the timeline instead.
 
-**Auto captions:** Captions listens to the English speech in the video and writes captions on your device, using OpenAI's English-only Whisper models through [transformers.js](https://huggingface.co/docs/transformers.js). The audio is never uploaded. The first time, the model downloads once from Hugging Face (Accurate, the default, about 250 MB; Fast about 80 MB) and the speech library and engine from jsDelivr; after that it works offline. Pick Lines or Word by word (the word being spoken lights up in the highlight color), and how many words per caption. Captions follow their footage like subtitles, and every line can be edited.
+**Auto captions:** Captions listens to the English speech in the video and writes captions on your device, using OpenAI's English-only Whisper models through [transformers.js](https://huggingface.co/docs/transformers.js). The audio is never uploaded. The first time, the model downloads once from Hugging Face (Accurate, the default, about 250 MB; Fast about 80 MB) and the speech library and engine from jsDelivr; after that it works offline. Pick Lines or Word by word (the word being spoken lights up in the highlight color), and how many words per caption. Captions follow their footage like subtitles; every line can be edited, and dragged in the timeline (its ends change when it starts and stops). The Captions window shows how much space the saved model takes and has a button to remove it, and Chyron asks the browser not to clear its storage automatically.
 
 **Safe zones:** pick TikTok, Reels or Shorts under Safe zones to shade, roughly, where each app's buttons and captions sit over a vertical video. They're only shown while editing, never exported.
 
 **Exporting several shapes:** Export lets you tick Vertical 9:16, Portrait 4:5, Square 1:1 and Wide 16:9 and makes one video of each, named by shape. Graphics keep their places in the frame and each clip stays centred on the same part of its picture.
 
 **Cover image:** Cover image opens a picker with a preview, a strip of frames and a scrubber. Choose the moment, with or without graphics, and save it as a JPEG in one or more shapes. The chosen moment is marked on the timeline.
+
+**Timeline zoom:** use the zoom slider by the play controls, pinch the timeline (trackpad or iPhone), or ⌘/Ctrl-scroll over it for finer control of handles and caption timing. The timeline scrolls sideways with layer names pinned, and follows the playhead while playing.
 
 **Layers:** drag a graphic's name in the timeline up or down to change what sits in front.
 
