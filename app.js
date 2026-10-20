@@ -69,6 +69,18 @@ const selectedClip = () => state.clips.find((c) => c.id === selectedClipId) || n
 const endOf = (o) => (o.toEnd ? duration : Math.min(o.end, duration));
 const strip = (k, v) => (k[0] === '_' ? undefined : v);
 
+// Reads a typed time: plain seconds ("6.04") or minutes and seconds ("0:06.04", "1:02").
+function parseTime(text) {
+  const m = String(text).trim().match(/^(?:(\d+):)?(\d+(?:\.\d*)?|\.\d+)$/);
+  return m ? (+m[1] || 0) * 60 + parseFloat(m[2]) : NaN;
+}
+// Times in fields: like the timecode, with hundredths when they matter.
+function fmtField(t) {
+  const m = Math.floor(t / 60), sec = t - m * 60;
+  const digits = Math.abs(sec * 10 - Math.round(sec * 10)) > 0.001 ? 2 : 1;
+  return `${m}:${sec.toFixed(digits).padStart(digits + 3, '0')}`;
+}
+
 function fmt(t) {
   const m = Math.floor(t / 60);
   return `${m}:${(t - m * 60).toFixed(1).padStart(4, '0')}`;
@@ -301,8 +313,8 @@ $('#newProject').onclick = () => {
   state.clips = [];
   T = 0;
   applyState();
-  save();
-  toast('Started a new project. Your brand kit, styles and layouts are kept.');
+  commit();
+  toast('Started a new project. Your brand kit, styles and layouts are kept.', true);
 };
 
 async function openProject(file) {
@@ -1417,7 +1429,7 @@ function fillInspector() {
     $('#clipTitle').textContent = c.name;
     clipProps.querySelectorAll('[data-c]').forEach((el) => {
       if (el.type === 'checkbox') el.checked = c[el.dataset.c];
-      else if (el !== document.activeElement) el.value = +c[el.dataset.c].toFixed(2);
+      else if (el !== document.activeElement) el.value = 'time' in el.dataset ? fmtField(c[el.dataset.c]) : +c[el.dataset.c].toFixed(2);
     });
     const i = state.clips.indexOf(c);
     $('#earlier').disabled = i === 0;
@@ -1440,6 +1452,7 @@ function fillInspector() {
     const k = el.dataset.k, v = k === 'end' ? endOf(o) : subs && k === 'text' ? (cue ? cue.text : '') : o[k];
     if (v == null) return; // a setting this kind of graphic does not have
     if (el.type === 'checkbox') el.checked = v;
+    else if ('time' in el.dataset) el.value = fmtField(v);
     else if (el.dataset.scale) el.value = Math.round(v * el.dataset.scale);
     else el.value = el.type === 'number' ? +v.toFixed(2) : v;
   });
@@ -1457,7 +1470,12 @@ props.addEventListener('input', (e) => {
   const el = e.target, k = el.dataset.k, o = selected();
   if (!k || !o) return;
   if (el.type === 'checkbox') o[k] = el.checked;
-  else if (el.type === 'range' || 'num' in el.dataset) o[k] = parseFloat(el.value);
+  else if ('time' in el.dataset) {
+    const v = parseTime(el.value);
+    if (Number.isNaN(v)) return;
+    if (k === 'start') o.start = clamp(v, 0, endOf(o) - 0.1);
+    else setEnd(o, v);
+  } else if (el.type === 'range' || 'num' in el.dataset) o[k] = parseFloat(el.value);
   else if (el.type === 'number') {
     const v = parseFloat(el.value);
     if (Number.isNaN(v)) return;
@@ -1486,6 +1504,13 @@ props.addEventListener('input', (e) => {
   }
   save();
 });
+
+// Typed times are tidied into the usual format once the field is left.
+for (const form of [props, clipProps]) {
+  form.addEventListener('change', (e) => {
+    if ('time' in e.target.dataset) fillInspector();
+  });
+}
 
 // Out-of-range numbers are pulled into range once the field is left.
 props.addEventListener('change', (e) => {
@@ -1557,6 +1582,7 @@ $('#front').onclick = () => {
   save();
 };
 function removeSelected() {
+  const wasClip = !!selectedClipId;
   if (selectedClipId) {
     state.clips = state.clips.filter((c) => c.id !== selectedClipId);
     pause();
@@ -1565,7 +1591,7 @@ function removeSelected() {
   select(null);
   renderTimeline();
   commit();
-  toast('Deleted. Undo brings it back.');
+  toast(wasClip ? 'Clip removed.' : 'Deleted.', true);
 }
 $('#del').onclick = $('#delClip').onclick = removeSelected;
 
@@ -1619,7 +1645,7 @@ clipProps.addEventListener('input', (e) => {
   if (!k || !c) return;
   if (k === 'muted') c.muted = el.checked;
   else {
-    const v = parseFloat(el.value);
+    const v = parseTime(el.value);
     if (Number.isNaN(v)) return;
     if (k === 'in') c.in = clamp(v, 0, c.out - 0.1);
     else c.out = clamp(v, c.in + 0.1, media.get(c.name).duration);
@@ -1741,8 +1767,8 @@ function renderLibrary() {
       state.overlays = l.overlays.map((o) => ({ ...BASE, ...o, id: uid() }));
       select(null);
       renderTimeline();
-      save();
-      toast('Layout applied. Use Undo to go back.');
+      commit();
+      toast('Layout applied.', true);
     }],
     ['×', 'Remove this layout', removeFrom('layouts', l)],
   ])));
@@ -1794,6 +1820,8 @@ $('#brand').addEventListener('input', (e) => {
 });
 $('#brandBtn').onclick = () => $('#brand').showModal();
 $('#brandDone').onclick = $('#brandClose').onclick = () => $('#brand').close();
+$('#keysBtn').onclick = () => $('#keys').showModal();
+$('#keysDone').onclick = () => $('#keys').close();
 $('#addFont').onclick = () => $('#fontFile').click();
 $('#googleForm').onsubmit = (e) => {
   e.preventDefault();
@@ -1868,7 +1896,7 @@ function renderTimeline() {
         const d = document.createElement('i');
         d.className = `kf${k.move === 'glide' ? ' glide' : ''}`;
         d._key = k;
-        d.style.left = `${((k.t - s.c.in) / s.len) * 100}%`;
+        d.style.left = `clamp(6px, ${((k.t - s.c.in) / s.len) * 100}%, calc(100% - 6px))`;
         d.title = k.move === 'glide' ? 'Keyframe (glide)' : 'Keyframe (jump)';
         d.onpointerdown = (e) => dragKey(e, s, k, d, el);
         el.append(d);
@@ -2080,7 +2108,7 @@ function dragKey(e, s, k, diamond, bar) {
     if (clamped !== t) snapped = '';
     key.t = clamped;
     c.keys.sort((a, b) => a.t - b.t);
-    el.style.left = `${((key.t - c.in) / s.len) * 100}%`;
+    el.style.left = `clamp(6px, ${((key.t - c.in) / s.len) * 100}%, calc(100% - 6px))`;
     setTime(s.start + (key.t - c.in));
     keyTip.hidden = false;
     keyTip.textContent = `${key !== k ? 'Copy · ' : ''}${fmt(s.start + (key.t - c.in))}${snapped ? ` · ${snapped[1]}` : ''}`;
@@ -2690,13 +2718,24 @@ $('#coverSave').onclick = async () => {
 };
 
 let toastTimer;
-function toast(msg) {
+// A short message. With `undo`, it carries an Undo button and stays a little longer.
+function toast(msg, undo = false) {
   const el = $('#toast');
   ($('#brand').open ? $('#brand') : document.body).append(el); // stay visible above an open dialog
   el.textContent = msg;
+  if (undo) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = 'Undo';
+    b.onclick = () => {
+      el.hidden = true;
+      stepHistory(-1);
+    };
+    el.append(b);
+  }
   el.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (el.hidden = true), 5000);
+  toastTimer = setTimeout(() => (el.hidden = true), undo ? 8000 : 5000);
 }
 
 /* ---------- keyboard and top bar ---------- */
@@ -2731,6 +2770,23 @@ addEventListener('keydown', (e) => {
   } else if (o && mod && e.key === 'd') {
     e.preventDefault();
     $('#dup').click();
+  } else if (e.key === '?') {
+    e.preventDefault();
+    $('#keys').showModal();
+  } else if (!mod && (e.key === 's' || e.key === 'S') && hasVideo) {
+    e.preventDefault();
+    $('#split').click();
+  } else if (o && (e.key === '[' || e.key === ']')) {
+    e.preventDefault();
+    $(e.key === '[' ? '#startHere' : '#endHere').click();
+  } else if (e.key === 'Home' || e.key === 'End') {
+    e.preventDefault();
+    setTime(e.key === 'Home' ? 0 : duration - 0.02);
+  } else if (',.<>'.includes(e.key) || (!o && (e.key === 'ArrowLeft' || e.key === 'ArrowRight'))) {
+    // Step the playhead: a tenth of a second, or a second with Shift.
+    e.preventDefault();
+    const back = e.key === ',' || e.key === 'ArrowLeft' || e.key === '<';
+    setTime(T + (back ? -1 : 1) * (e.shiftKey ? 1 : 0.1));
   } else if (o && e.key.startsWith('Arrow')) {
     e.preventDefault();
     const step = e.shiftKey ? 0.02 : 0.004;
@@ -3343,10 +3399,21 @@ function buildChips(select) {
     return b;
   }));
 }
+// Under icon rows (not typefaces, which show their names), a caption names the current choice.
+const CHIP_NAMES = { anim: 'In', out: 'Out', speed: 'Speed', kind: 'Style', edges: 'Soft edges' };
 function syncChips() {
   props.querySelectorAll('.chips').forEach((row) => {
-    const v = row.previousElementSibling.value;
+    const select = row.previousElementSibling, v = select.value;
     row.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.v === v));
+    const name = CHIP_NAMES[select.dataset.k];
+    if (!name || select.dataset.chips === 'font') return;
+    let cap = row.nextElementSibling;
+    if (!cap || !cap.classList.contains('chip-name')) {
+      cap = Object.assign(document.createElement('small'), { className: 'chip-name' });
+      row.after(cap);
+    }
+    const opt = [...select.options].find((o) => o.value === v);
+    cap.textContent = `${name}: ${opt ? opt.textContent : ''}`;
   });
 }
 props.querySelectorAll('[data-chips]').forEach(buildChips);

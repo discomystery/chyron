@@ -413,6 +413,13 @@ textarea:disabled { background: transparent; }
 .tr-tools { display: flex; gap: 2px; }
 .tr-tools button { width: 32px; height: 34px; padding: 0; }
 
+/* Keyboard shortcut list. */
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; margin: 4px 0 8px; font-size: 13px; }
+.keys dt { white-space: nowrap; color: var(--ink); }
+.keys dd { margin: 0; color: var(--muted); }
+kbd { display: inline-block; min-width: 20px; padding: 1px 6px; background: var(--raised); border: 1px solid #46527a; border-bottom-width: 2px; border-radius: 5px; color: var(--ink); font: 600 12px/1.5 Archivo, sans-serif; text-align: center; }
+.in-menu, .chip-name { display: none; }
+
 /* Phone-only pieces. */
 .fi, .caps-ic, .chips, .brand-dots, .edit-tabs { display: none; }
 .mark { margin: -8px 0 15px; padding: 4px 10px; font-size: 12px; }
@@ -602,6 +609,7 @@ dialog .actions button { flex: none; padding: 8px 20px; }
 .card p { margin: 0 0 14px; color: var(--muted); }
 .progress { height: 8px; margin-bottom: 8px; background: #0a0e19; border-radius: 4px; overflow: hidden; }
 .progress i { display: block; width: 0; height: 100%; background: var(--tally); box-shadow: 0 0 10px var(--tally); }
+.toast button { pointer-events: auto; margin-left: 12px; padding: 4px 12px; background: var(--signal-deep); border-color: var(--signal-deep); color: #fff; font-size: 13px; font-weight: 700; }
 .toast {
   pointer-events: none;
   position: fixed;
@@ -651,6 +659,7 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   }
   .more.open { display: grid; gap: 4px; }
   .more > .spacer { display: none; }
+  .more .in-menu { display: inline; }
   .more > button, .more summary { justify-content: flex-start; width: 100%; background: transparent; border-color: transparent; }
   .more .inline { justify-content: space-between; padding: 4px 12px; font-size: 14px; }
   .more .inline select { width: 60%; }
@@ -806,6 +815,19 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   .tr-tools button { width: 40px; height: 36px; }
 
   .place-f { display: none !important; } /* on a phone, Place on the rail puts the spots on the video */
+
+  /* Fingers need at least 44px. */
+  .bar button, .bar .pair button, #play, #mute, .tl-zoom button { min-width: 44px; min-height: 44px; }
+  #export { padding: 0 14px; }
+  .bar h1 { font-size: 14px; }
+  .bar h1 span { padding: 5px 8px 4px; }
+  .tl-zoom input { display: none; } /* − / + and pinching are enough on a phone */
+  #keysBtn { display: none; }
+  .inspector .f small.chip-name { display: block; margin-top: -2px; font-size: 11px; color: var(--muted); }
+  .fi-txt { width: 30px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  #timing [data-k="speed"] + .chips + .chip-name { order: 2; grid-column: 1 / -1; }
+  #timing label.move { flex-wrap: wrap; }
+  #timing label.move .chip-name { flex-basis: 100%; padding-left: 36px; }
 
   /* The tab strip. */
   .edit-tabs { display: flex; flex: none; padding: 0 6px max(0px, env(safe-area-inset-bottom)); background: var(--desk); border-top: 1px solid var(--line); }

@@ -56,6 +56,7 @@
       </select>
     </label>
     <span class="spacer"></span>
+    <button id="keysBtn" class="icon" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts"><svg class="ic" aria-hidden="true"><use href="#i-keys"/></svg><span class="in-menu">Keyboard shortcuts</span></button>
     <button id="install" hidden title="Install app" aria-label="Install app"><svg class="ic" aria-hidden="true"><use href="#i-install"/></svg><span class="lab">Install app</span></button>
     <button id="still"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>Cover image</button>
   </div>
@@ -67,6 +68,12 @@
   <aside class="add" id="addPanel">
     <button id="closeAdd" class="icon sheet-close" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
     <h2>Add a graphic</h2>
+    <div class="tiles">
+      <button id="addImage" class="tile"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>Image</button>
+      <button id="addLogo" class="tile"><svg class="ic" aria-hidden="true"><use href="#i-logo"/></svg>Logo</button>
+      <button id="addSubs" class="tile" title="Add subtitles from an SRT file"><svg class="ic" aria-hidden="true"><use href="#i-subs"/></svg>Subtitles</button>
+      <button id="addCaptions" class="tile" title="Make captions from the speech, on this device"><svg class="ic" aria-hidden="true"><use href="#i-wave"/></svg>Captions</button>
+    </div>
     <button data-add="headline"><span class="thumb t-headline"><b>Council caps</b><b>rent hikes</b></span>Headline</button>
     <button data-add="label"><span class="thumb t-label"><b>Breaking</b></span>Label</button>
     <button data-add="lower"><span class="thumb t-lower"><b>Maria Alvarez</b><i>Council member</i></span>Name bar</button>
@@ -74,12 +81,6 @@
     <button data-add="credit"><span class="thumb t-credit"><b>Source: City Clerk</b></span>Source credit</button>
     <button data-add="text"><span class="thumb t-text"><b>Plain text</b></span>Plain text</button>
     <button data-add="cover"><span class="thumb t-cover"><b></b></span>Cover (solid or blur)</button>
-    <div class="tiles">
-      <button id="addImage" class="tile"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>Image</button>
-      <button id="addLogo" class="tile"><svg class="ic" aria-hidden="true"><use href="#i-logo"/></svg>Logo</button>
-      <button id="addSubs" class="tile" title="Add subtitles from an SRT file"><svg class="ic" aria-hidden="true"><use href="#i-subs"/></svg>Subtitles</button>
-      <button id="addCaptions" class="tile" title="Make captions from the speech, on this device"><svg class="ic" aria-hidden="true"><use href="#i-wave"/></svg>Captions</button>
-    </div>
 
     <h2>Saved styles</h2>
     <div id="styles" class="lib"></div>
@@ -215,8 +216,8 @@
       <div class="group" id="timing" data-group="timing" data-subs="hide">
         <div class="f"><span class="w">On screen</span>
           <div class="times span-times">
-            <label>From<input data-k="start" type="number" step="0.1" min="0"></label>
-            <label>To<input data-k="end" type="number" step="0.1" min="0"></label>
+            <label>From<input data-k="start" data-time type="text" inputmode="decimal" autocomplete="off"></label>
+            <label>To<input data-k="end" data-time type="text" inputmode="decimal" autocomplete="off"></label>
           </div>
           <div class="here">
             <button type="button" id="startHere" title="Start at the playhead"><svg class="ic" aria-hidden="true"><use href="#i-enter"/></svg>Start here</button>
@@ -226,7 +227,7 @@
         </div>
         <div class="f"><span class="w">Animation</span>
           <div class="times">
-            <label class="move"><span class="w">Entrance</span><svg class="ic fi" aria-hidden="true"><use href="#i-enter"/></svg>
+            <label class="move"><span class="w">Entrance</span><span class="fi fi-txt" aria-hidden="true">In</span>
               <select data-k="anim" data-chips="anim" aria-label="Entrance">
                 <option value="none">None</option>
                 <option value="fade">Fade in</option>
@@ -235,7 +236,7 @@
                 <option value="slide">Slide in</option>
               </select>
             </label>
-            <label class="move"><span class="w">Exit</span><svg class="ic fi" aria-hidden="true"><use href="#i-exit"/></svg>
+            <label class="move"><span class="w">Exit</span><span class="fi fi-txt" aria-hidden="true">Out</span>
               <select data-k="out" data-chips="anim" aria-label="Exit">
                 <option value="none">None</option>
                 <option value="fade">Fade out</option>
@@ -264,8 +265,8 @@
       <h2 id="clipTitle">Clip</h2>
       <div class="f">Use this part of the video
         <div class="times">
-          <label>From<input data-c="in" type="number" step="0.1" min="0"></label>
-          <label>To<input data-c="out" type="number" step="0.1" min="0"></label>
+          <label>From<input data-c="in" data-time type="text" inputmode="decimal" autocomplete="off"></label>
+          <label>To<input data-c="out" data-time type="text" inputmode="decimal" autocomplete="off"></label>
         </div>
         <small>You can also drag either end of the clip in the timeline.</small>
       </div>
@@ -374,6 +375,24 @@
   </div>
   <p class="hint">Edit any line. To split one, put the cursor where it should break and tap <svg class="ic" aria-hidden="true"><use href="#i-split"/></svg>. Tap a time to play that line.</p>
   <div class="tr-lines" id="trLines"></div>
+</dialog>
+
+<dialog id="keys" aria-labelledby="keysTitle">
+  <h2 id="keysTitle">Keyboard shortcuts</h2>
+  <dl class="keys">
+    <dt><kbd>Space</kbd></dt><dd>Play or pause</dd>
+    <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Step the playhead a tenth of a second (with a graphic selected, these nudge it instead; use <kbd>,</kbd> <kbd>.</kbd>)</dd>
+    <dt><kbd>Shift</kbd> + step</dt><dd>A whole second (or a bigger nudge)</dd>
+    <dt><kbd>Home</kbd> <kbd>End</kbd></dt><dd>Go to the start or end</dd>
+    <dt><kbd>S</kbd></dt><dd>Split the clip at the playhead</dd>
+    <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Start or end the selected graphic at the playhead</dd>
+    <dt><kbd>⌘</kbd> <kbd>D</kbd></dt><dd>Duplicate the selected graphic</dd>
+    <dt><kbd>Delete</kbd></dt><dd>Delete what's selected</dd>
+    <dt><kbd>⌘</kbd> <kbd>Z</kbd></dt><dd>Undo (add <kbd>Shift</kbd> to redo)</dd>
+    <dt><kbd>⌘</kbd> + scroll</dt><dd>Zoom the timeline (or pinch the trackpad)</dd>
+    <dt><kbd>?</kbd></dt><dd>Show this list</dd>
+  </dl>
+  <div class="actions"><button type="button" id="keysDone" class="primary">Done</button></div>
 </dialog>
 
 <dialog id="captionDlg">
