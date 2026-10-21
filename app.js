@@ -608,6 +608,7 @@ async function addVideoFile(file) {
         el.onerror = reject;
       });
       if (!Number.isFinite(el.duration)) throw new Error();
+      await firstFrame(el);
     } catch {
       el.remove();
       return toast(`${file.name} could not be opened. Try an MP4 or MOV file.`);
@@ -617,6 +618,26 @@ async function addVideoFile(file) {
     if (state.clips.some((c) => c.name === file.name)) return;
   }
   state.clips.push({ id: uid(), name: file.name, in: 0, out: media.get(file.name).duration, muted: false });
+}
+
+// Phones (Safari on iPhone above all) stop at the video's details and load no picture until it plays,
+// which left the preview gray. A silent play and pause gets the first frame in; give up after a few
+// seconds rather than hang, since the frame then arrives with the first real play.
+async function firstFrame(el) {
+  if (el.readyState >= 2) return;
+  const ready = new Promise((resolve) => {
+    el.addEventListener('loadeddata', resolve, { once: true });
+    setTimeout(resolve, 4000);
+  });
+  el.muted = true;
+  try {
+    await el.play();
+    el.pause();
+  } catch {
+    el.load(); // playing wasn't allowed; asking to load is the next best nudge
+  }
+  await ready;
+  if (el.currentTime) el.currentTime = 0;
 }
 
 /* ---------- drawing ---------- */
