@@ -303,6 +303,10 @@
           <div class="num"><button type="button" data-step="-10" aria-label="Zoom out">−</button><label class="num-box"><input id="clipZoom" min="100" max="500" step="1" type="number" inputmode="numeric" aria-label="Zoom"><i>%</i></label><button type="button" data-step="10" aria-label="Zoom in">+</button></div>
           <button type="button" id="resetFrame" class="icon" title="Reset framing and remove keyframes" aria-label="Reset framing"><svg class="ic" aria-hidden="true"><use href="#i-reset"/></svg></button>
         </div>
+        <div class="follow-row">
+          <button type="button" id="followSpeaker" title="For guests in side-by-side boxes: zoom into whoever is talking"><svg class="ic" aria-hidden="true"><use href="#i-speaker"/></svg>Follow the speaker</button>
+          <small id="followMsg" class="keep">For guests in side-by-side boxes: zooms into whoever is talking. Works on this device.</small>
+        </div>
       </div>
       <div class="actions">
         <button type="button" id="split"><svg class="ic" aria-hidden="true"><use href="#i-split"/></svg>Split at playhead</button>
@@ -497,6 +501,7 @@
 
 <script src="vendor/mediabunny.min.js"></script>
 <script src="icons.js"></script>
+<script src="autoframe.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

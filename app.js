@@ -1595,6 +1595,97 @@ $('#resetFrame').onclick = () => {
   save();
 };
 
+// Follow the speaker: for guests in side-by-side boxes, looks at the clip on this device (small gray
+// frames and the sound, see autoframe.js) and replaces its framing with keyframes that zoom into
+// whichever box is talking, gliding between them, and back to the whole picture when it's unclear.
+const FOLLOW_HINT = $('#followMsg').textContent;
+$('#followSpeaker').onclick = async () => {
+  const c = selectedClip(), s = c && segs.find((x) => x.c === c);
+  if (!s) return;
+  pause();
+  const btn = $('#followSpeaker'), msg = $('#followMsg');
+  btn.disabled = true;
+  msg.textContent = 'Looking at the video…';
+  try {
+    const { segments } = await planFollow(s, (p) => (msg.textContent = `Looking at the video… ${Math.round(p * 100)}%`));
+    const el = s.m.el, sw = el.videoWidth || 1920, sh = el.videoHeight || 1080;
+    const boxes = new Set(segments.map((g) => g.box).filter(Boolean));
+    if (!boxes.size) return toast('Couldn’t find guests in side-by-side boxes in this clip.');
+    const keys = followKeys(segments.map((g) => ({ ...g, from: g.from + c.in, to: g.to + c.in })), sw, sh);
+    c.keys = [...(c.keys || []).filter((k) => k.t < c.in || k.t > c.out), ...keys].sort((a, b) => a.t - b.t);
+    renderTimeline();
+    syncFraming();
+    save();
+    const shots = segments.filter((g) => g.box).length;
+    toast(`Following the speaker in ${shots} close-up${shots === 1 ? '' : 's'}. Drag the video at any keyframe to adjust it.`, true);
+  } catch (err) {
+    console.warn('Could not follow the speaker:', err);
+    toast('Couldn’t read this video to follow the speaker.');
+  } finally {
+    btn.disabled = false;
+    msg.textContent = FOLLOW_HINT;
+  }
+};
+
+// Reads the clip as small grayscale frames, about ten a second, and its sound alongside, then plans
+// who to show.
+async function planFollow(s, progress) {
+  const { c, m } = s, len = c.out - c.in;
+  const fps = Math.min(10, 3000 / len), n = Math.max(2, Math.floor(len * fps) + 1);
+  const times = Array.from({ length: n }, (_, i) => c.in + (i * len) / (n - 1));
+  const sw = m.el.videoWidth || 1920, sh = m.el.videoHeight || 1080;
+  const w = 192, h = Math.max(2, Math.round((w * sh) / sw));
+  const g = new OffscreenCanvas(w, h).getContext('2d', { willReadFrequently: true });
+  const frames = [], sound = speechAudio(m.file, c.in, c.out).catch(() => null);
+  const input = new MB.Input({ formats: MB.ALL_FORMATS, source: new MB.BlobSource(m.file) });
+  try {
+    const track = await input.getPrimaryVideoTrack();
+    for await (const sample of new MB.VideoSampleSink(track).samplesAtTimestamps(times)) {
+      if (sample) {
+        sample.draw(g, 0, 0, w, h);
+        sample.close();
+        const px = g.getImageData(0, 0, w, h).data, f = new Uint8Array(w * h);
+        for (let i = 0; i < f.length; i++) f[i] = (px[i * 4] * 77 + px[i * 4 + 1] * 150 + px[i * 4 + 2] * 29) >> 8;
+        frames.push(f);
+      } else {
+        frames.push(frames.at(-1) || new Uint8Array(w * h));
+      }
+      if (frames.length % 20 === 0) {
+        progress(frames.length / n * 0.9);
+        await new Promise(requestAnimationFrame); // let the page paint the progress
+      }
+    }
+  } finally {
+    input.dispose();
+  }
+  const samples = await sound;
+  progress(1);
+  return Autoframe.plan({ frames, w, h, times: times.map((t) => t - c.in), samples, rate: 16000 });
+}
+
+// The framing that fills the frame with one box, a touch tighter so its border stays out of shot.
+function framingFor(box, sw, sh) {
+  if (!box) return { ...NO_FRAMING };
+  const k = baseScale(sw, sh);
+  const zoom = clamp(1.06 * Math.max(canvas.width / (box.w * sw * k), canvas.height / (box.h * sh * k)), 1, 5);
+  const f = { x: box.x + box.w / 2, y: box.y + box.h / 2, zoom };
+  keepInFrame(f, sw, sh);
+  return f;
+}
+
+// Keyframes for a plan: each change holds the framing before it, then glides over half a second.
+function followKeys(segments, sw, sh) {
+  const keys = [], ease = 0.5;
+  segments.forEach((g, i) => {
+    const f = framingFor(g.box, sw, sh);
+    if (!i) return keys.push({ t: g.from, ...f, move: 'jump' });
+    const t = Math.max(g.from - ease / 2, keys.at(-1).t + 0.05);
+    keys.push({ t, ...framingFor(segments[i - 1].box, sw, sh), move: 'jump' });
+    keys.push({ t: Math.max(t + 0.05, g.from + ease / 2), ...f, move: 'glide' });
+  });
+  return keys;
+}
+
 /* ---------- inspector ---------- */
 
 const props = $('#props');
