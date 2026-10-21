@@ -17,9 +17,12 @@ const FONTS = [
   { name: 'Newsreader', weight: 600 },
   { name: 'Inter Tight', weight: 800 },
   { name: 'Space Mono', weight: 700 },
+  // Chyron Sports' own typefaces.
+  ...(SPORTS ? [{ name: 'Big Shoulders Display', weight: 900 }, { name: 'Saira Condensed', weight: 700 }] : []),
 ];
 const DEFAULT_BRAND = SPORTS
-  ? { dark: '#0b0b0d', light: '#ffffff', main: '#1f5bff', accent: '#ffd60a', extra: '#e10b1f', head: 'Anton', body: 'Barlow Condensed', logo: null, v: 2 }
+  // Rink colors: navy boards, ice blue, the blue line and the goal light.
+  ? { dark: '#0b1a33', light: '#ffffff', main: '#1e63ff', accent: '#5fd0ff', extra: '#e4002b', head: 'Big Shoulders Display', body: 'Saira Condensed', logo: null, v: 2 }
   : { dark: '#111111', light: '#ffffff', main: '#1740e0', accent: '#ffd400', extra: '#e4262c', head: 'Inter Tight', body: 'Space Mono', logo: null, v: 2 };
 // Values starting with $ are filled in from the brand kit when a graphic is made.
 const BASE = {
@@ -42,20 +45,20 @@ const PRESETS = {
   cover: { name: 'Cover', kind: 'solid', width: 1, x: 0, y: 0.72, h: 0.28, bg: '$dark', edges: 'top', feather: 0.55, blur: 0.5 },
 
   // Sports graphics, offered in Chyron Sports, with hockey samples. Both apps can show them, so project files open in either.
-  score: { name: 'Score bug', kind: 'score', text: 'EDM 3\nFLA 2', sub: 'P3 · 4:12', font: '$head', subFont: '$body', size: 50, y: 0.05, upper: true, team1: '#ff4c00', team2: '#c8102e', color: '$light', bg: '$dark', accent: '$accent', anim: 'wipe' },
-  stat: { name: 'Stat card', kind: 'stat', text: '3 G\n1 A\n7 SOG', sub: 'Hat trick', font: '$head', subFont: '$body', size: 120, y: 0.6, align: 'center', upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
-  scoop: { name: 'Scoop card', kind: 'scoop', tag: 'Breaking', text: 'The Oilers are acquiring a *top-four defenceman*', sub: 'per @FriedgeHNIC', font: '$head', subFont: '$body', size: 70, y: 0.07, upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$extra', anim: 'rise' },
-  deal: { name: 'Trade card', kind: 'deal', tag: 'Trade', text: 'Mikko Rantanen', sub: 'Avalanche > Hurricanes', note: '50% retained · Three-team deal', font: '$head', subFont: '$body', size: 84, y: 0.6, upper: true, hl: 'color', color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
-  stamp: { name: 'Stamp', kind: 'stamp', text: 'Goal', font: '$head', size: 92, x: 0.1, width: 0.8, y: 0.3, align: 'center', upper: true, tilt: -6, color: '$accent', bg: '$dark', bgAlpha: 0.75, radius: 0.3, anim: 'pop' },
-  breaking: { name: 'Breaking tag', kind: 'lines', text: 'Breaking', font: '$head', size: 44, y: 0.1, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
-  caption: { name: 'Top caption', kind: 'lines', text: 'McDavid went *coast to coast*', font: 'Inter Tight', size: 52, x: 0.06, width: 0.88, y: 0.17, align: 'center', color: '#111111', bg: '#ffffff', accent: '$extra', radius: 0.35, anim: 'pop' },
-  take: { name: 'Hot take', kind: 'lines', text: 'The shootout should be *banned*', font: '$head', size: 78, y: 0.08, align: 'center', upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$accent', anim: 'marker' },
-  situation: { name: 'Game situation', kind: 'lines', text: 'P3 · 0:48 · Empty net', size: 36, y: 0.69, upper: true, track: 0.04, dot: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'type' },
-  status: { name: 'Status tag', kind: 'lines', text: 'Out · Upper body', font: '$head', size: 40, y: 0.2, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
-  player: { name: 'Player name bar', kind: 'lower', text: '#97 Connor McDavid', sub: 'Oilers · Center', font: '$head', subFont: '$body', size: 58, y: 0.76, upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'slide' },
-  host: { name: 'Show name bar', kind: 'lower', look: 'marker', text: 'Elliotte Friedman', sub: '32 Thoughts', font: '$head', subFont: '$body', size: 54, y: 0.74, upper: true, color: '$dark', bg: '$accent', accent: '$dark', anim: 'marker' },
-  poll: { name: 'Poll prompt', kind: 'lines', text: 'Agree or disagree?', font: '$head', size: 50, y: 0.86, align: 'center', upper: true, color: '$dark', bg: '$accent', accent: '$extra', anim: 'pop' },
-  via: { name: 'Clip credit', kind: 'lines', text: 'via @NHL', size: 30, y: 0.93, bgAlpha: 0.7, anim: 'fade' },
+  score: { name: 'Score bug', kind: 'score', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: 'EDM 3\nFLA 2', sub: 'P3 · 4:12', font: '$head', subFont: '$body', size: 50, y: 0.05, upper: true, team1: '#ff4c00', team2: '#c8102e', color: '$light', bg: '$dark', accent: '$accent', anim: 'wipe' },
+  stat: { name: 'Stat card', kind: 'stat', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: '3 G\n1 A\n7 SOG', sub: 'Hat trick', font: '$head', subFont: '$body', size: 120, y: 0.6, align: 'center', upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
+  scoop: { name: 'Scoop card', kind: 'scoop', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', tag: 'Breaking', text: 'The Oilers are acquiring a *top-four defenceman*', sub: 'per @FriedgeHNIC', font: '$head', subFont: '$body', size: 70, y: 0.07, upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$extra', anim: 'rise' },
+  deal: { name: 'Trade card', kind: 'deal', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', tag: 'Trade', text: 'Mikko Rantanen', sub: 'Avalanche > Hurricanes', note: '50% retained · Three-team deal', font: '$head', subFont: '$body', size: 84, y: 0.6, upper: true, hl: 'color', color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
+  stamp: { name: 'Stamp', kind: 'stamp', text: 'Goal', font: '$head', size: 96, x: 0.1, width: 0.8, y: 0.3, align: 'center', upper: true, tilt: -6, sheen: true, color: '$light', bg: '$extra', radius: 0.12, anim: 'pop' },
+  breaking: { name: 'Breaking tag', kind: 'lines', slant: 0.2, sheen: true, stripe: true, stripeColor: '$accent', text: 'Breaking', font: '$head', size: 44, y: 0.1, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
+  caption: { name: 'Top caption', kind: 'lines', slant: 0.2, stripe: true, stripeColor: '$extra', text: 'McDavid went *coast to coast*', size: 60, x: 0.06, width: 0.88, y: 0.17, align: 'center', color: '$dark', bg: '$light', hl: 'box', accent: '$accent', anim: 'slide' },
+  take: { name: 'Hot take', kind: 'lines', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: 'The shootout should be *banned*', font: '$head', size: 84, y: 0.08, align: 'center', upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$accent', anim: 'wipe' },
+  situation: { name: 'Game situation', kind: 'lines', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: 'P3 · 0:48 · Empty net', size: 36, y: 0.69, upper: true, track: 0.04, dot: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'slide' },
+  status: { name: 'Status tag', kind: 'lines', slant: 0.2, sheen: true, stripe: true, stripeColor: '$accent', text: 'Out · Upper body', font: '$head', size: 40, y: 0.2, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
+  player: { name: 'Player name bar', kind: 'lower', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: '#97 Connor McDavid', sub: 'Oilers · Center', font: '$head', subFont: '$body', size: 58, y: 0.76, upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'slide' },
+  host: { name: 'Show name bar', kind: 'lower', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: 'Elliotte Friedman', sub: '32 Thoughts', font: '$head', subFont: '$body', size: 54, y: 0.74, upper: true, color: '$light', bg: '$main', accent: '$light', anim: 'slide' },
+  poll: { name: 'Poll prompt', kind: 'lines', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: 'Agree or disagree?', font: '$head', size: 50, y: 0.86, align: 'center', upper: true, color: '$dark', bg: '$accent', accent: '$extra', anim: 'pop' },
+  via: { name: 'Clip credit', kind: 'lines', slant: 0.2, text: 'via @NHL', size: 30, y: 0.93, bgAlpha: 0.7, anim: 'fade' },
 };
 const COVERS = new Set(['solid', 'gradient', 'blur']);
 const COVER_NAMES = { solid: 'Solid cover', blur: 'Blur' };
@@ -113,7 +116,7 @@ function fmt(t) {
 /* ---------- graphics: creating ---------- */
 
 function resolveBrand(o) {
-  for (const k of ['font', 'subFont', 'color', 'bg', 'accent', 'team1', 'team2']) {
+  for (const k of ['font', 'subFont', 'color', 'bg', 'accent', 'team1', 'team2', 'stripeColor']) {
     if (typeof o[k] === 'string' && o[k][0] === '$') o[k] = state.brand[o[k].slice(1)];
   }
   return o;
@@ -816,6 +819,15 @@ function fillBox(o, x, y, w, h, r) {
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, r);
   ctx.fill();
+  // Sheen: a broadcast-style gloss, lighter at the top and shaded at the bottom.
+  if (o.sheen) {
+    const g = ctx.createLinearGradient(0, y, 0, y + h);
+    g.addColorStop(0, 'rgba(255,255,255,0.22)');
+    g.addColorStop(0.5, 'rgba(255,255,255,0.02)');
+    g.addColorStop(1, 'rgba(0,0,0,0.22)');
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
   ctx.globalAlpha = a;
 }
 
@@ -1531,11 +1543,19 @@ function drawFrame(t, animate, paintBackground) {
       if (o.out !== 'none' && end < duration - 0.05) pout = clamp((end - t) / effectTime(o, o.out, all, true));
     }
     ctx.save();
+    // Slant leans the whole graphic forward, boxes and letters alike, about its middle.
+    if (o.slant) ctx.transform(1, 0, -o.slant, 1, o.slant * (L.y + L.h / 2), 0);
     let fx = null;
     for (const [type, p, out] of [[o.anim, pin, false], [o.out, pout, true]]) {
       if (p >= 1) continue;
       if (L.handles && L.handles.has(type)) fx = fx || { type, p, out };
       else applyEffect(type, p, L, u, out);
+    }
+    // Stripe: a bar of color leading the graphic, like a goal light.
+    if (o.stripe && !COVERS.has(o.kind) && o.kind !== 'image') {
+      const sw = Math.max(4, 12 * u);
+      ctx.fillStyle = o.stripeColor || state.brand.extra;
+      ctx.fillRect(L.ix - sw * 1.8, L.y, sw, L.h);
     }
     L.paint(fx);
     ctx.restore();
@@ -2371,12 +2391,12 @@ const TEMPLATES = [
   },
   {
     name: 'Fight', hint: 'Fight stamp and the penalties',
-    graphics: [['stamp', { text: 'Fight', color: '$extra', y: 0.12 }], ['situation', { text: 'P1 · 8:31 · Five for fighting', y: 0.25 }], ['via']],
+    graphics: [['stamp', { text: 'Fight', color: '$extra', bg: '$light', y: 0.12 }], ['situation', { text: 'P1 · 8:31 · Five for fighting', y: 0.25 }], ['via']],
   },
   { name: 'Hot take', hint: 'The take, who said it, a poll', tip: 'Add Captions for word-by-word captions.', graphics: [['take'], ['host'], ['poll']] },
   {
     name: 'Postgame', hint: 'Quote and name bar', tip: 'Add Captions to write out what’s said.',
-    graphics: [['quote', { text: 'We have to be *better* in our own end.', sub: 'Kris Knoblauch', y: 0.08 }], ['player', { text: 'Kris Knoblauch', sub: 'Oilers · Head coach' }], ['via', { text: 'via @EdmontonOilers' }]],
+    graphics: [['quote', { text: 'We have to be *better* in our own end.', sub: 'Kris Knoblauch', look: 'classic', slant: 0.2, sheen: true, y: 0.08 }], ['player', { text: 'Kris Knoblauch', sub: 'Oilers · Head coach' }], ['via', { text: 'via @EdmontonOilers' }]],
   },
   {
     name: 'Reaction', hint: 'Caption and the score',

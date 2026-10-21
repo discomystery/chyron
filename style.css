@@ -224,6 +224,19 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
 .t-poll { align-items: center; justify-content: flex-end; padding-bottom: 7px; }
 .t-poll b { padding: 3px 6px; background: var(--b-accent); color: var(--b-dark); font: 400 11px var(--b-head), sans-serif; text-transform: uppercase; }
 
+/* Chyron Sports' broadcast look in the previews: leaning shapes, a gloss, and a red stripe in front. */
+[data-edition="sports"] .thumb:is(.t-scoop, .t-score, .t-stat, .t-deal, .t-breaking, .t-caption, .t-take, .t-situation, .t-player, .t-poll, .t-lower, .t-credit) > * { transform: skewX(-11deg); }
+[data-edition="sports"] .thumb:is(.t-scoop, .t-score, .t-stat, .t-deal, .t-take, .t-situation, .t-player, .t-caption, .t-poll, .t-lower) { padding-left: 18px; }
+[data-edition="sports"] .thumb:is(.t-score, .t-take, .t-situation, .t-caption, .t-poll) b,
+[data-edition="sports"] :is(.t-scoop, .t-deal, .t-player, .t-lower) > b { box-shadow: -6px 0 0 -2px var(--b-extra); background-image: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.2)); }
+[data-edition="sports"] .t-caption b { border-radius: 0; background-color: var(--b-light); color: var(--b-dark); font: 400 13px var(--b-head), sans-serif; text-transform: uppercase; }
+[data-edition="sports"] .t-caption b em { padding: 0 2px; background: var(--b-accent); color: var(--b-dark); }
+[data-edition="sports"] .t-stamp b { border: 2px solid #fff; border-radius: 3px; background: var(--b-extra); color: #fff; }
+[data-edition="sports"] .t-lower b { background: var(--b-main); color: #fff; }
+[data-edition="sports"] .t-lower i { background: var(--b-dark); }
+[data-edition="sports"] .t-lower i em { display: none; }
+[data-edition="sports"] .t-poll b, [data-edition="sports"] .t-take b em, [data-edition="sports"] .t-player i { color: var(--b-dark); }
+
 /* Templates: one tap swaps in a set of graphics for a kind of video. */
 .templates { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-bottom: 8px; }
 .tpl { display: block; width: 100%; padding: 8px 10px; text-align: left; }
