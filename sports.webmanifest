@@ -1,0 +1,52 @@
+{
+  "name": "Chyron Sports",
+  "short_name": "Chyron Sports",
+  "description": "Sports news graphics for videos: scoops, scores, stats and trades",
+  "id": "./sports.html",
+  "start_url": "./sports.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1220",
+  "theme_color": "#161c2d",
+  "icons": [
+    {
+      "src": "icons/sports-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/sports-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/sports-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "./sports.html",
+      "accept": {
+        "video/mp4": [
+          ".mp4",
+          ".m4v"
+        ],
+        "video/quicktime": [
+          ".mov"
+        ],
+        "video/webm": [
+          ".webm"
+        ],
+        "application/x-subrip": [
+          ".srt"
+        ],
+        "application/json": [
+          ".json"
+        ]
+      }
+    }
+  ]
+}

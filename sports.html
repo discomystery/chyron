@@ -1,0 +1,545 @@
+<!doctype html>
+<!-- Chyron Sports: the same app as index.html, with sports graphics and templates. Keep the two pages in step. -->
+<html lang="en" data-edition="sports">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chyron Sports — sports graphics for video</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wdth,wght@62..125,400..800&family=Barlow+Condensed:wght@700&family=Inter+Tight:wght@800&family=Space+Mono:wght@700&family=Big+Shoulders+Display:wght@900&family=Saira+Condensed:wght@700&family=Doto:wght@900&family=JetBrains+Mono:wght@800&family=Fraunces:opsz,wght,SOFT@9..144,600,100&family=Hanken+Grotesk:wght@700&family=Newsreader:opsz,wght@6..72,600&family=Oswald:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="sports.webmanifest">
+<link rel="icon" href="icons/sports-192.png">
+<link rel="apple-touch-icon" href="icons/sports-apple-touch-icon.png">
+<meta name="theme-color" content="#161c2d">
+</head>
+<body>
+
+<header class="bar">
+  <h1><span>Chyron <em>Sports</em></span></h1>
+  <button id="open" class="lead" aria-label="Add video"><svg class="ic" aria-hidden="true"><use href="#i-video"/></svg><span class="lbl">Add video</span></button>
+  <span class="pair">
+    <button id="undo" class="icon" title="Undo" aria-label="Undo" disabled><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg></button>
+    <button id="redo" class="icon" title="Redo" aria-label="Redo" disabled><svg class="ic" aria-hidden="true"><use href="#i-redo"/></svg></button>
+  </span>
+  <!-- On a phone these fold into the More menu; on a computer they sit in the bar. -->
+  <div class="more" id="more">
+    <details class="menu" id="projectMenu">
+      <summary><svg class="ic" aria-hidden="true"><use href="#i-folder"/></svg>Project<svg class="ic" aria-hidden="true"><use href="#i-caret"/></svg></summary>
+      <div>
+        <button id="newProject"><svg class="ic" aria-hidden="true"><use href="#i-new"/></svg>New project</button>
+        <button id="openProject"><svg class="ic" aria-hidden="true"><use href="#i-open"/></svg>Open project file</button>
+        <button id="saveProject"><svg class="ic" aria-hidden="true"><use href="#i-save"/></svg>Save project file</button>
+      </div>
+    </details>
+    <button id="brandBtn"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg>Brand kit</button>
+    <label class="inline"><span class="lab">Shape</span>
+      <select id="format">
+        <option value="9:16">Vertical 9:16</option>
+        <option value="4:5">Portrait 4:5</option>
+        <option value="1:1">Square 1:1</option>
+        <option value="16:9">Wide 16:9</option>
+      </select>
+    </label>
+    <label class="inline"><span class="lab">Video</span>
+      <select id="fit">
+        <option value="cover">Fill the frame</option>
+        <option value="contain">Fit inside</option>
+      </select>
+    </label>
+    <label class="inline" title="Shade where each app's buttons and captions cover a vertical video"><span class="lab">Safe zones</span>
+      <select id="safeZones">
+        <option value="">No safe zones</option>
+        <option value="tiktok">TikTok safe zones</option>
+        <option value="reels">Reels safe zones</option>
+        <option value="shorts">Shorts safe zones</option>
+      </select>
+    </label>
+    <span class="spacer"></span>
+    <button id="keysBtn" class="icon" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts"><svg class="ic" aria-hidden="true"><use href="#i-keys"/></svg><span class="in-menu">Keyboard shortcuts</span></button>
+    <button id="install" hidden title="Install app" aria-label="Install app"><svg class="ic" aria-hidden="true"><use href="#i-install"/></svg><span class="lab">Install app</span></button>
+    <button id="still"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg>Cover image</button>
+  </div>
+  <button id="moreBtn" class="icon" aria-label="More" aria-expanded="false" aria-controls="more"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg></button>
+  <button id="export" class="primary"><svg class="ic" aria-hidden="true"><use href="#i-export"/></svg>Export<span class="lbl"> video</span></button>
+</header>
+
+<main>
+  <aside class="add" id="addPanel">
+    <button id="closeAdd" class="icon sheet-close" aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+    <h2>Add a graphic</h2>
+    <div class="tiles">
+      <button id="addImage" class="tile"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>Image</button>
+      <button id="addLogo" class="tile"><svg class="ic" aria-hidden="true"><use href="#i-logo"/></svg>Logo</button>
+      <button id="addSubs" class="tile" title="Add subtitles from an SRT file"><svg class="ic" aria-hidden="true"><use href="#i-subs"/></svg>Subtitles</button>
+      <button id="addCaptions" class="tile" title="Make captions from the speech, on this device"><svg class="ic" aria-hidden="true"><use href="#i-wave"/></svg>Captions</button>
+    </div>
+    <h2>Templates</h2>
+    <div id="templates" class="templates"></div>
+
+    <h2>Sports graphics</h2>
+    <button data-add="scoop"><span class="thumb t-scoop"><i><em></em>Breaking</i><b>Oilers land a <em>top-four D</em></b></span>Scoop card</button>
+    <button data-add="score"><span class="thumb t-score"><b><i></i>EDM 3<i class="t2"></i>FLA 2<em>P3 4:12</em></b></span>Score bug</button>
+    <button data-add="stat"><span class="thumb t-stat"><b>3<small>G</small></b><b>1<small>A</small></b><b>7<small>SOG</small></b></span>Stat card</button>
+    <button data-add="deal"><span class="thumb t-deal"><i>Trade</i><b>Mikko Rantanen</b><small>COL → CAR</small></span>Trade or transfer</button>
+    <button data-add="stamp"><span class="thumb t-stamp"><b>Goal</b></span>Stamp</button>
+    <button data-add="breaking" class="keep"><span class="thumb t-breaking"><b>Breaking</b></span>Breaking tag</button>
+    <button data-add="caption"><span class="thumb t-caption"><b>Coast to <em>coast</em></b></span>Top caption</button>
+    <button data-add="take" class="keep"><span class="thumb t-take"><b>Ban the <em>shootout</em></b></span>Hot take</button>
+    <button data-add="situation" class="keep"><span class="thumb t-situation"><b><em></em>P3 · 0:48 · Empty net</b></span>Game situation</button>
+    <button data-add="status" class="keep"><span class="thumb t-breaking"><b>Out · Upper body</b></span>Status tag</button>
+    <button data-add="player"><span class="thumb t-player"><b>#97 Connor McDavid</b><i>Oilers · Center</i></span>Player name bar</button>
+    <button data-add="host" class="keep"><span class="thumb t-lower"><b>Elliotte Friedman</b><i><em>//</em> 32 Thoughts</i></span>Show name bar</button>
+    <button data-add="poll" class="keep"><span class="thumb t-poll"><b>Agree or disagree?</b></span>Poll prompt</button>
+    <button data-add="via" class="keep"><span class="thumb t-credit"><b>via @NHL</b></span>Clip credit</button>
+
+    <h2>News graphics</h2>
+    <button data-add="headline" class="keep"><span class="thumb t-headline"><b>Council caps</b><b>rent hikes</b></span>Headline</button>
+    <button data-add="quote" class="keep"><span class="thumb t-quote"><span><i>&gt; Maria Alvarez</i><b>“Tonight we <em>acted</em>.”</b></span></span>Quote</button>
+    <button data-add="text" class="keep"><span class="thumb t-text"><b>Plain text</b></span>Plain text</button>
+    <button data-add="cover"><span class="thumb t-cover"><b></b></span>Cover (solid or blur)</button>
+
+    <h2>Saved styles</h2>
+    <div id="styles" class="lib"></div>
+
+    <h2>Layouts</h2>
+    <button id="saveLayout" class="plain"><svg class="ic" aria-hidden="true"><use href="#i-layout"/></svg>Save this layout</button>
+    <div id="layouts" class="lib"></div>
+  </aside>
+
+  <section class="stage" id="stageArea">
+    <canvas class="ghost" id="ghost" hidden aria-hidden="true"></canvas>
+    <!-- Phone only: rails in the space beside a tall video. -->
+    <div class="rail" id="addRail" aria-label="Add a graphic">
+      <button data-add="scoop"><svg class="ic" aria-hidden="true"><use href="#i-scoop"/></svg><span>Scoop</span></button>
+      <button data-add="score"><svg class="ic" aria-hidden="true"><use href="#i-score"/></svg><span>Score</span></button>
+      <button data-add="stat"><svg class="ic" aria-hidden="true"><use href="#i-stat"/></svg><span>Stat</span></button>
+      <button data-add="deal"><svg class="ic" aria-hidden="true"><use href="#i-deal"/></svg><span>Trade</span></button>
+      <button data-add="stamp"><svg class="ic" aria-hidden="true"><use href="#i-stamp"/></svg><span>Stamp</span></button>
+      <button data-add="caption"><svg class="ic" aria-hidden="true"><use href="#i-headline"/></svg><span>Caption</span></button>
+      <button data-add="player"><svg class="ic" aria-hidden="true"><use href="#i-lower"/></svg><span>Name</span></button>
+      <button data-add="cover"><svg class="ic" aria-hidden="true"><use href="#i-cover"/></svg><span>Cover</span></button>
+      <button id="moreAdd"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg><span>More</span></button>
+    </div>
+    <div class="wrap" id="wrap">
+      <canvas id="stage" width="1080" height="1920"></canvas>
+      <div class="guide v" id="guideV" hidden></div>
+      <div class="guide h" id="guideH" hidden></div>
+      <div class="place-over" id="placeOver" hidden aria-label="Place on screen"></div>
+      <div class="safe" id="safe" hidden aria-hidden="true"></div>
+      <div class="sel" id="sel" hidden><i class="grip" title="Drag to change width"></i><i class="vgrip" title="Drag to change height"></i></div>
+      <div class="empty" id="empty">
+        <svg class="ic" aria-hidden="true"><use href="#i-video"/></svg>
+        <p id="emptyMsg">Drop a video here to start.</p>
+        <button id="open2" class="primary">Add video</button>
+      </div>
+    </div>
+    <div class="rail" id="toolRail">
+      <div id="railNone">
+        <button data-proxy="still"><svg class="ic" aria-hidden="true"><use href="#i-camera"/></svg><span>Frame</span></button>
+        <button data-proxy="brandBtn"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg><span>Brand</span></button>
+      </div>
+      <div id="railGraphic" hidden>
+        <button id="railPlace"><svg class="ic" aria-hidden="true"><use href="#i-place"/></svg><span>Place</span></button>
+        <button data-proxy="dup"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy</span></button>
+        <button data-proxy="front"><svg class="ic" aria-hidden="true"><use href="#i-front"/></svg><span>Front</span></button>
+        <button data-proxy="saveStyle"><svg class="ic" aria-hidden="true"><use href="#i-style"/></svg><span>Style</span></button>
+        <button data-proxy="del" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg><span>Delete</span></button>
+      </div>
+      <div id="railClip" hidden>
+        <button data-proxy="split"><svg class="ic" aria-hidden="true"><use href="#i-split"/></svg><span>Split</span></button>
+        <button data-proxy="earlier"><svg class="ic" aria-hidden="true"><use href="#i-earlier"/></svg><span>Earlier</span></button>
+        <button data-proxy="later"><svg class="ic" aria-hidden="true"><use href="#i-later"/></svg><span>Later</span></button>
+        <button data-proxy="delClip" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg><span>Remove</span></button>
+      </div>
+    </div>
+  </section>
+
+  <aside class="inspector">
+    <p id="noSel" class="hint"><svg class="ic" aria-hidden="true"><use href="#i-select"/></svg>Select a graphic on the video or in the timeline to edit it. Drag it to move it.</p>
+
+    <form id="props" hidden onsubmit="return false">
+      <h2 id="propTitle">Headline</h2>
+      <label class="f" data-group="text" data-for="lines lower quote text score stat scoop deal stamp"><span id="textLabel">Text</span><textarea data-k="text" rows="3"></textarea>
+        <small data-for="lines quote text scoop deal">Put *asterisks* around words to highlight them.</small></label>
+      <button type="button" id="markWord" class="mark" data-group="text" data-for="lines quote text scoop deal" title="Highlight the selected word" aria-label="Highlight the selected word"><svg class="ic" aria-hidden="true"><use href="#i-marker"/></svg><span class="w">Highlight selected word</span></button>
+      <label class="f" data-group="text" data-for="scoop deal"><span>Tag</span><input data-k="tag" type="text" list="tagIdeas"></label>
+      <datalist id="tagIdeas"><option>Breaking</option><option>Report</option><option>Sources</option><option>Official</option><option>Trade</option><option>Signing</option><option>Extension</option><option>Waivers</option><option>Injury</option><option>Rumor</option></datalist>
+      <label class="f" data-group="text" data-for="lower quote score stat scoop deal"><span id="subLabel">Title</span><input data-k="sub" type="text"></label>
+      <label class="f" data-group="text" data-for="deal"><span>Terms</span><input data-k="note" type="text"></label>
+      <label class="f" data-group="text" data-subs="only">Background
+        <select data-k="kind">
+          <option value="lines">Box behind each line</option>
+          <option value="text">None, with a soft shadow</option>
+        </select>
+      </label>
+      <button type="button" id="openTranscript" class="wide" data-group="text" data-subs="only"><svg class="ic" aria-hidden="true"><use href="#i-transcript"/></svg>Edit as transcript</button>
+      <label class="check" data-group="text" data-subs="only"><input data-k="karaoke" type="checkbox"> Highlight each word as it’s spoken</label>
+      <label class="f" data-group="text" data-subs="only">Subtitles follow
+        <select data-k="follow">
+          <option value="footage">The video they were made for</option>
+          <option value="timeline">The finished timeline</option>
+        </select>
+        <small>Following the video keeps them in sync when you trim, split or move clips. Choose the timeline for subtitles made from the edited video.</small></label>
+      <label class="f" data-group="text" data-subs="only">Shift timing (seconds)<input data-k="offset" type="number" step="0.1">
+        <small>Use a negative number if the subtitles appear late.</small></label>
+      <button type="button" id="replaceImage" class="wide" data-group="text" data-for="image"><svg class="ic" aria-hidden="true"><use href="#i-swap"/></svg>Replace image</button>
+
+      <label class="f" data-group="style" data-for="solid gradient blur"><span class="w">Cover style</span><select data-k="kind" data-chips="fill" aria-label="Cover style">
+          <option value="solid">Solid</option>
+          <option value="blur">Blur</option>
+        </select></label>
+      <label class="f" data-group="style" data-for="lines lower quote text score stat scoop deal stamp"><span class="w">Typeface</span><select data-k="font" data-chips="font"></select></label>
+      <label class="f" data-group="style" data-for="lines quote text scoop deal"><span class="w">Highlighted words</span><select data-k="hl" aria-label="Highlighted words">
+        <option value="box">Highlight</option>
+        <option value="color">In color</option>
+        <option value="underline">Underlined</option>
+      </select></label>
+      <label class="f" data-group="style" data-for="lower quote"><span class="w">Look</span><select data-k="look" aria-label="Look">
+        <option value="marker">Marker</option>
+        <option value="classic">Classic</option>
+      </select></label>
+      <label class="f" data-group="style" data-for="lower quote score stat scoop deal"><span class="w mini" id="subFontLabel">Title typeface</span><select data-k="subFont" data-chips="font" aria-label="Second line typeface"></select></label>
+      <div class="f cued" data-group="style" data-for="lines lower quote text score stat scoop deal stamp"><span class="w">Text size</span><span class="fi fi-size" title="Text size" aria-hidden="true"><small>A</small>A</span>
+        <div class="num"><button type="button" data-step="-2" aria-label="Smaller">−</button><label class="num-box"><input data-k="size" min="18" max="220" step="1" type="number" inputmode="numeric" aria-label="Text size"></label><button type="button" data-step="2" aria-label="Bigger">+</button></div>
+      </div>
+      <div class="f cued" data-group="style"><span class="w">Width</span><svg class="ic fi" aria-hidden="true"><use href="#i-width"/></svg>
+        <div class="num"><button type="button" data-step="-5" aria-label="Smaller">−</button><label class="num-box"><input data-k="width" data-scale="100" min="5" max="100" step="1" type="number" inputmode="numeric" aria-label="Width"><i>%</i></label><button type="button" data-step="5" aria-label="Bigger">+</button></div>
+      </div>
+      <div class="f cued" data-group="style" data-for="solid gradient blur"><span class="w">Height</span><svg class="ic fi" aria-hidden="true"><use href="#i-height"/></svg>
+        <div class="num"><button type="button" data-step="-5" aria-label="Shorter">−</button><label class="num-box"><input data-k="h" data-scale="100" min="2" max="100" step="1" type="number" inputmode="numeric" aria-label="Height"><i>%</i></label><button type="button" data-step="5" aria-label="Taller">+</button></div>
+      </div>
+      <label class="f cued" data-group="style" data-for="blur"><span class="w">Blur strength</span><svg class="ic fi" aria-hidden="true"><use href="#i-fill-blur"/></svg><input data-k="blur" type="range" min="0" max="1" step="0.05" aria-label="Blur strength"></label>
+      <label class="f cued" data-group="style" data-for="solid blur"><span class="w">Soft edges</span><svg class="ic fi" aria-hidden="true"><use href="#i-feather"/></svg><input data-k="feather" type="range" min="0" max="1" step="0.05" aria-label="Soft edges"></label>
+      <label class="f" data-group="style" data-for="solid blur"><span class="w">Which edges</span><select data-k="edges" data-chips="edges" aria-label="Soften which edges">
+          <option value="all">All sides</option>
+          <option value="top">Top</option>
+          <option value="bottom">Bottom</option>
+          <option value="left">Left</option>
+          <option value="right">Right</option>
+        </select></label>
+      <label class="f cued" data-group="style" data-for="stamp"><span class="w">Tilt</span><svg class="ic fi" aria-hidden="true"><use href="#i-stamp"/></svg><input data-k="tilt" type="range" min="-15" max="15" step="1" aria-label="Tilt"></label>
+      <div class="f" data-group="style" data-for="lines lower quote text score stat scoop deal stamp"><span class="w">Alignment</span>
+        <div class="seg" id="align">
+          <button type="button" data-v="left" title="Left" aria-label="Align left"><svg class="ic" aria-hidden="true"><use href="#i-left"/></svg></button>
+          <button type="button" data-v="center" title="Center" aria-label="Align center"><svg class="ic" aria-hidden="true"><use href="#i-center"/></svg></button>
+          <button type="button" data-v="right" title="Right" aria-label="Align right"><svg class="ic" aria-hidden="true"><use href="#i-right"/></svg></button>
+        </div>
+      </div>
+      <div class="f place-f" data-group="style"><span class="w">Place on screen</span>
+        <div class="place" id="place" role="group" aria-label="Place on screen"></div>
+      </div>
+      <label class="check caps" data-group="style" data-for="lines lower quote text score stat scoop deal stamp" title="All capitals"><input data-k="upper" type="checkbox"> <span class="w">All capitals</span><b class="caps-ic" aria-hidden="true">AA</b></label>
+      <label class="check" data-group="style" data-for="lines"><input data-k="dot" type="checkbox"> Dot before the text</label>
+      <label class="f cued" data-group="style" data-for="lines lower quote text score stat scoop deal stamp"><span class="w">Slant</span><svg class="ic fi" aria-hidden="true"><use href="#i-deal"/></svg><input data-k="slant" type="range" min="0" max="0.4" step="0.02" aria-label="Slant"></label>
+      <label class="check" data-group="style" data-for="lines lower quote text score stat scoop deal stamp"><input data-k="sheen" type="checkbox"> Sheen on the boxes</label>
+      <label class="check" data-group="style" data-for="lines lower quote text score stat scoop deal stamp"><input data-k="led" type="checkbox"> LED dots on the boxes</label>
+      <label class="check" data-group="style" data-for="lines lower quote text score stat scoop deal stamp"><input data-k="glow" type="checkbox"> Glowing letters</label>
+      <label class="f" data-group="style" data-for="lines lower scoop deal stamp"><span>Before</span><input data-k="pre" type="text" placeholder="> or [" aria-label="Text before"></label>
+      <label class="f" data-group="style" data-for="lines lower scoop deal stamp"><span>After</span><input data-k="post" type="text" placeholder="]" aria-label="Text after"></label>
+      <label class="check" data-group="style" data-for="lines lower scoop deal"><input data-k="caret" type="checkbox"> Blinking caret at the end</label>
+      <label class="f" data-group="style" data-for="lines lower quote text score stat scoop deal"><span class="w">Edge</span><select data-k="edge" aria-label="Edge">
+        <option value="">None</option>
+        <option value="left">Along the leading side</option>
+        <option value="top">Along the top</option>
+        <option value="bottom">Along the bottom</option>
+      </select></label>
+
+      <div class="f" data-group="color" data-for="lines lower quote text solid score stat scoop deal stamp"><span class="w">Colors</span>
+        <div class="looks" id="looks" data-for="lines lower quote text solid score stat scoop deal stamp"></div>
+        <div class="colors">
+          <label data-for="lines lower quote text score stat scoop deal stamp" title="Text color"><span>Text</span><input data-k="color" type="color"></label>
+          <label data-for="lines lower quote solid score stat scoop deal stamp" title="Box color"><span>Box</span><input data-k="bg" type="color"></label>
+          <label data-for="lines lower quote text score stat scoop deal" title="Highlight color"><span id="accentLabel">Highlight</span><input data-k="accent" type="color"></label>
+          <label data-for="lines lower quote text score stat scoop deal" title="Edge color"><span>Edge</span><input data-k="edgeColor" type="color"></label>
+          <label data-for="score" title="First team's color"><span>Team 1</span><input data-k="team1" type="color"></label>
+          <label data-for="score" title="Second team's color"><span>Team 2</span><input data-k="team2" type="color"></label>
+        </div>
+        <div class="brand-dots" id="brandDots"></div>
+      </div>
+      <label class="f cued" data-group="color" data-for="lines lower quote solid score stat scoop deal stamp"><span class="w">Box opacity</span><svg class="ic fi" aria-hidden="true"><use href="#i-opacity"/></svg><input data-k="bgAlpha" type="range" min="0" max="1" step="0.05" aria-label="Box opacity"></label>
+      <label class="f cued" data-group="color" data-for="image"><span class="w">Opacity</span><svg class="ic fi" aria-hidden="true"><use href="#i-opacity"/></svg><input data-k="alpha" type="range" min="0.05" max="1" step="0.05" aria-label="Opacity"></label>
+      <label class="f cued" data-group="color" data-for="lines quote image solid blur score stat scoop deal stamp"><span class="w">Rounded corners</span><svg class="ic fi" aria-hidden="true"><use href="#i-corner"/></svg><input data-k="radius" type="range" min="0" max="1" step="0.05" aria-label="Rounded corners"></label>
+
+      <div class="group" id="timing" data-group="timing" data-subs="hide">
+        <div class="f"><span class="w">On screen</span>
+          <div class="times span-times">
+            <label>From<input data-k="start" data-time type="text" inputmode="decimal" autocomplete="off"></label>
+            <label>To<input data-k="end" data-time type="text" inputmode="decimal" autocomplete="off"></label>
+          </div>
+          <div class="here">
+            <button type="button" id="startHere" title="Start at the playhead"><svg class="ic" aria-hidden="true"><use href="#i-enter"/></svg>Start here</button>
+            <button type="button" id="endHere" title="End at the playhead">End here<svg class="ic" aria-hidden="true"><use href="#i-exit"/></svg></button>
+          </div>
+          <button type="button" id="whole" class="wide" title="Show for the whole video" aria-label="Show for the whole video"><svg class="ic" aria-hidden="true"><use href="#i-whole"/></svg><span class="w">Show for the whole video</span></button>
+        </div>
+        <div class="f"><span class="w">Animation</span>
+          <div class="times">
+            <label class="move"><span class="w">Entrance</span><span class="fi fi-txt" aria-hidden="true">In</span>
+              <select data-k="anim" data-chips="anim" aria-label="Entrance">
+                <option value="none">None</option>
+                <option value="fade">Fade in</option>
+                <option value="rise">Rise up</option>
+                <option value="wipe">Wipe across</option>
+                <option value="slide">Slide in</option>
+                <option value="marker">Highlighter</option>
+                <option value="type">Typewriter</option>
+                <option value="pop">Pop in</option>
+              </select>
+            </label>
+            <label class="move"><span class="w">Exit</span><span class="fi fi-txt" aria-hidden="true">Out</span>
+              <select data-k="out" data-chips="anim" aria-label="Exit">
+                <option value="none">None</option>
+                <option value="fade">Fade out</option>
+                <option value="rise">Drop down</option>
+                <option value="wipe">Wipe away</option>
+                <option value="slide">Slide out</option>
+                <option value="marker">Highlighter off</option>
+                <option value="type">Backspace</option>
+                <option value="pop">Pop out</option>
+              </select>
+            </label>
+          </div>
+          <select data-k="speed" data-num data-chips="speed" class="wide" aria-label="Speed">
+            <option value="0.25">Quick</option>
+            <option value="0.45">Normal speed</option>
+            <option value="0.9">Slow</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" id="dup"><svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg>Duplicate</button>
+        <button type="button" id="front"><svg class="ic" aria-hidden="true"><use href="#i-front"/></svg>Bring to front</button>
+        <button type="button" id="saveStyle"><svg class="ic" aria-hidden="true"><use href="#i-style"/></svg>Save as a style</button>
+        <button type="button" id="del" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>Delete</button>
+      </div>
+    </form>
+
+    <form id="clipProps" hidden onsubmit="return false">
+      <h2 id="clipTitle">Clip</h2>
+      <div class="f">Use this part of the video
+        <div class="times">
+          <label>From<input data-c="in" data-time type="text" inputmode="decimal" autocomplete="off"></label>
+          <label>To<input data-c="out" data-time type="text" inputmode="decimal" autocomplete="off"></label>
+        </div>
+        <small>You can also drag either end of the clip in the timeline.</small>
+      </div>
+      <label class="check"><input data-c="muted" type="checkbox"> Mute this clip’s sound</label>
+      <div class="f framing"><span class="w">Framing</span>
+        <small class="keep">Drag the video to move it in the frame. Pinch or scroll to zoom. Change it at another moment and a keyframe is added there.</small>
+        <div class="key-row">
+          <button type="button" id="prevKey" class="icon" title="Previous keyframe" aria-label="Previous keyframe"><svg class="ic" aria-hidden="true"><use href="#i-prev"/></svg></button>
+          <button type="button" id="keyHere" class="icon" title="Keyframe at the playhead" aria-label="Keyframe at the playhead" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-key"/></svg></button>
+          <button type="button" id="nextKey" class="icon" title="Next keyframe" aria-label="Next keyframe"><svg class="ic" aria-hidden="true"><use href="#i-next"/></svg></button>
+          <div class="seg" id="keyMove" title="How the framing gets to this keyframe">
+            <button type="button" data-v="jump" title="Jump: hold, then cut to this framing" aria-label="Jump to this framing"><svg class="ic" aria-hidden="true"><use href="#i-jump"/></svg><span class="w">Jump</span></button>
+            <button type="button" data-v="glide" title="Glide: move smoothly from the keyframe before" aria-label="Glide to this framing"><svg class="ic" aria-hidden="true"><use href="#i-glide"/></svg><span class="w">Glide</span></button>
+          </div>
+        </div>
+        <div class="zoom-row">
+          <span class="w">Zoom</span><svg class="ic fi" aria-hidden="true"><use href="#i-zoom"/></svg>
+          <div class="num"><button type="button" data-step="-10" aria-label="Zoom out">−</button><label class="num-box"><input id="clipZoom" min="100" max="500" step="1" type="number" inputmode="numeric" aria-label="Zoom"><i>%</i></label><button type="button" data-step="10" aria-label="Zoom in">+</button></div>
+          <button type="button" id="resetFrame" class="icon" title="Reset framing and remove keyframes" aria-label="Reset framing"><svg class="ic" aria-hidden="true"><use href="#i-reset"/></svg></button>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" id="split"><svg class="ic" aria-hidden="true"><use href="#i-split"/></svg>Split at playhead</button>
+        <button type="button" id="earlier"><svg class="ic" aria-hidden="true"><use href="#i-earlier"/></svg>Move earlier</button>
+        <button type="button" id="later"><svg class="ic" aria-hidden="true"><use href="#i-later"/></svg>Move later</button>
+        <button type="button" id="delClip" class="danger"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>Remove clip</button>
+      </div>
+    </form>
+
+    <!-- Phone only: picks which group of settings the panel shows. -->
+    <nav class="edit-tabs" id="editTabs" hidden aria-label="Edit">
+      <button type="button" data-tab="text"><svg class="ic" aria-hidden="true"><use href="#i-text"/></svg>Text</button>
+      <button type="button" data-tab="style"><span class="aa" aria-hidden="true">Aa</span>Style</button>
+      <button type="button" data-tab="color"><svg class="ic" aria-hidden="true"><use href="#i-palette"/></svg>Color</button>
+      <button type="button" data-tab="timing"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg>Timing</button>
+    </nav>
+  </aside>
+</main>
+
+<footer class="timeline">
+  <div class="transport">
+    <button id="play" title="Play (Space)" aria-label="Play"></button>
+    <span class="timecode"><b id="time">0:00.0</b><span id="total">0:00.0</span></span>
+    <button id="mute" class="icon" title="Mute" aria-label="Mute"></button>
+    <div class="tl-zoom" title="Zoom the timeline (or pinch it)">
+      <button id="tlOut" class="icon" aria-label="Zoom timeline out"><svg class="ic" aria-hidden="true"><use href="#i-zoom-out"/></svg></button>
+      <input id="tlZoom" type="range" min="0" max="1" step="0.01" value="0" aria-label="Timeline zoom">
+      <button id="tlIn" class="icon" aria-label="Zoom timeline in"><svg class="ic" aria-hidden="true"><use href="#i-zoom"/></svg></button>
+    </div>
+  </div>
+  <div class="tracks" id="tracks">
+    <div class="row ruler-row"><span></span><div class="ruler" id="ruler"></div></div>
+    <div id="rows"></div>
+    <div class="lanes"><div class="playhead" id="playhead"></div></div>
+  </div>
+</footer>
+
+<dialog id="brand">
+  <button type="button" id="brandClose" class="icon dlg-close" aria-label="Close brand kit"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+  <h2>Brand kit</h2>
+  <p class="hint">New graphics start with these. Changing a color or typeface here also updates the graphics that use it.</p>
+  <div class="f">Look
+    <div class="look-pick" id="lookPick"></div>
+    <small>Choosing a look sets the colors and typefaces below and restyles the sports graphics.</small>
+  </div>
+  <div class="f">Colors
+    <div class="colors">
+      <label>Dark<input data-b="dark" type="color"></label>
+      <label>Light<input data-b="light" type="color"></label>
+      <label>Main<input data-b="main" type="color"></label>
+      <label>Accent<input data-b="accent" type="color"></label>
+      <label>Extra<input data-b="extra" type="color"></label>
+    </div>
+  </div>
+  <label class="f">Headline typeface<select data-b="head"></select></label>
+  <label class="f">Text typeface<select data-b="body"></select></label>
+  <div class="f">More fonts
+    <div id="fontList" class="lib"></div>
+    <form id="googleForm" class="lib-row">
+      <input id="googleName" list="googleIdeas" placeholder="Google font name" aria-label="Google font name">
+      <button><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>Google</button>
+    </form>
+    <datalist id="googleIdeas">
+      <option>Bebas Neue</option><option>League Gothic</option><option>Fjalla One</option><option>Big Shoulders Display</option>
+      <option>Montserrat</option><option>Poppins</option><option>Inter</option><option>Roboto Condensed</option>
+      <option>Playfair Display</option><option>Libre Franklin</option><option>Space Grotesk</option><option>DM Serif Display</option>
+    </datalist>
+    <form id="adobeForm" class="lib-row">
+      <input id="adobeId" placeholder="Adobe Fonts project ID" aria-label="Adobe Fonts project ID">
+      <button><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg>Adobe</button>
+    </form>
+    <small>For Adobe Fonts, add the fonts to a web project on fonts.adobe.com, then paste that project’s ID here.</small>
+    <button type="button" id="addFont" class="wide"><svg class="ic" aria-hidden="true"><use href="#i-upload"/></svg>Add a font file</button>
+  </div>
+  <div class="f">Logo
+    <div class="logo-row">
+      <img id="logoPreview" alt="Your logo" hidden>
+      <button type="button" id="chooseLogo"><svg class="ic" aria-hidden="true"><use href="#i-image"/></svg>Choose logo</button>
+      <button type="button" id="removeLogo" hidden>Remove logo</button>
+    </div>
+  </div>
+  <div class="actions"><button type="button" id="brandDone" class="primary">Done</button></div>
+</dialog>
+
+<dialog id="transcript" class="transcript" aria-labelledby="trTitle">
+  <div class="tr-head">
+    <h2 id="trTitle">Transcript</h2>
+    <span id="trCount"></span>
+    <button type="button" id="trClose" class="icon" aria-label="Close transcript"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <p class="hint">Edit any line. To split one, put the cursor where it should break and tap <svg class="ic" aria-hidden="true"><use href="#i-split"/></svg>. Tap a time to play that line.</p>
+  <div class="tr-lines" id="trLines"></div>
+</dialog>
+
+<dialog id="keys" aria-labelledby="keysTitle">
+  <h2 id="keysTitle">Keyboard shortcuts</h2>
+  <dl class="keys">
+    <dt><kbd>Space</kbd></dt><dd>Play or pause</dd>
+    <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Step the playhead a tenth of a second (with a graphic selected, these nudge it instead; use <kbd>,</kbd> <kbd>.</kbd>)</dd>
+    <dt><kbd>Shift</kbd> + step</dt><dd>A whole second (or a bigger nudge)</dd>
+    <dt><kbd>Home</kbd> <kbd>End</kbd></dt><dd>Go to the start or end</dd>
+    <dt><kbd>S</kbd></dt><dd>Split the clip at the playhead</dd>
+    <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Start or end the selected graphic at the playhead</dd>
+    <dt><kbd>⌘</kbd> <kbd>D</kbd></dt><dd>Duplicate the selected graphic</dd>
+    <dt><kbd>Delete</kbd></dt><dd>Delete what's selected</dd>
+    <dt><kbd>⌘</kbd> <kbd>Z</kbd></dt><dd>Undo (add <kbd>Shift</kbd> to redo)</dd>
+    <dt><kbd>⌘</kbd> + scroll</dt><dd>Zoom the timeline (or pinch the trackpad)</dd>
+    <dt><kbd>?</kbd></dt><dd>Show this list</dd>
+  </dl>
+  <div class="actions"><button type="button" id="keysDone" class="primary">Done</button></div>
+</dialog>
+
+<dialog id="captionDlg">
+  <h2>Auto captions</h2>
+  <p class="hint">Chyron listens to the English speech in the video and writes captions, right here on this device. The audio is never uploaded. The first time, the speech model downloads once (Accurate about 250 MB, Fast about 80 MB); after that it works offline.</p>
+  <div class="f">Quality
+    <div class="seg" id="capQuality">
+      <button type="button" data-v="accurate">Accurate</button>
+      <button type="button" data-v="fast">Fast</button>
+    </div>
+  </div>
+  <div class="f">Look
+    <div class="seg" id="capLook">
+      <button type="button" data-v="lines">Lines</button>
+      <button type="button" data-v="words">Word by word</button>
+    </div>
+  </div>
+  <div class="f">Words per caption
+    <div class="num"><button type="button" data-step="-1" aria-label="Fewer words">−</button><label class="num-box"><input id="capWords" min="1" max="12" step="1" type="number" inputmode="numeric" aria-label="Words per caption"></label><button type="button" data-step="1" aria-label="More words">+</button></div>
+  </div>
+  <div class="model-store" id="modelStore" hidden>
+    <span id="modelInfo">Speech model saved on this device</span>
+    <button type="button" id="modelRemove" class="danger">Remove</button>
+  </div>
+  <div class="cap-status" id="capStatus" hidden>
+    <p id="capMsg"></p>
+    <div class="progress" id="capBar"><i></i></div>
+  </div>
+  <div class="actions">
+    <button id="capCancel">Cancel</button>
+    <button id="capGo" class="primary">Make captions</button>
+  </div>
+</dialog>
+
+<dialog id="exportDlg">
+  <h2>Export video</h2>
+  <p class="hint">Pick the shapes to make. Graphics keep their places in the frame, and each clip stays centred on the same part of its picture.</p>
+  <div class="shape-pick" id="exportShapes"></div>
+  <div class="actions">
+    <button id="exportCancel">Cancel</button>
+    <button id="exportGo" class="primary">Export</button>
+  </div>
+</dialog>
+
+<dialog id="coverDlg" class="cover-dlg">
+  <h2>Cover image</h2>
+  <div class="cover-view"><canvas id="coverPreview" width="270" height="480"></canvas></div>
+  <input id="coverTime" type="range" min="0" max="1" step="0.01" aria-label="Moment in the video">
+  <div class="cover-strip" id="coverStrip"></div>
+  <label class="check"><input id="coverGraphics" type="checkbox" checked> Include graphics</label>
+  <div class="shape-pick" id="coverShapes"></div>
+  <div class="actions">
+    <button id="coverClose">Close</button>
+    <button id="coverSave" class="primary">Save image</button>
+  </div>
+</dialog>
+
+<div class="modal" id="exporting" hidden>
+  <div class="card">
+    <h2 id="exportTitle">Exporting your video</h2>
+    <p id="exportMsg"></p>
+    <div class="progress"><i id="progress"></i></div>
+    <p id="exportTime" class="time"></p>
+    <button id="cancel">Cancel export</button>
+  </div>
+</div>
+<div class="modal" id="done" hidden>
+  <div class="card">
+    <h2 id="doneTitle">Your video is ready</h2>
+    <p id="doneMsg">Choose Save Video in the share sheet to put it in Photos, or send it straight to an app.</p>
+    <div class="actions">
+      <button id="shareFile" class="primary"><svg class="ic" aria-hidden="true"><use href="#i-export"/></svg>Save or share</button>
+      <button id="downloadFile">Download file</button>
+      <button id="closeDone">Close</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<input id="file" type="file" accept="video/*" multiple hidden>
+<input id="imgFile" type="file" accept="image/*" hidden>
+<input id="logoFile" type="file" accept="image/*" hidden>
+<input id="fontFile" type="file" accept=".ttf,.otf,.woff,.woff2" hidden>
+<input id="srtFile" type="file" accept=".srt,.vtt" hidden>
+<input id="projFile" type="file" accept=".json,application/json" hidden>
+
+<script src="vendor/mediabunny.min.js"></script>
+<script src="icons.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
