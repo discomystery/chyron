@@ -198,8 +198,8 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
 .t-scoop b { padding: 3px 5px; background: var(--b-dark); color: var(--b-light); font: 400 11px var(--b-head), sans-serif; text-transform: uppercase; }
 .t-scoop b em { padding: 0 2px; background: var(--b-extra); color: #fff; }
 .t-score b { display: flex; align-items: center; gap: 4px; padding-right: 0; background: var(--b-dark); color: var(--b-light); font: 400 11px/22px var(--b-head), sans-serif; }
-.t-score b i { width: 3px; height: 22px; background: #552583; }
-.t-score b i.t2 { margin-left: 3px; background: #007a33; }
+.t-score b i { width: 3px; height: 22px; background: #ff4c00; }
+.t-score b i.t2 { margin-left: 3px; background: #c8102e; }
 .t-score b em { padding: 0 5px; margin-left: 4px; background: var(--b-accent); color: var(--b-dark); font: 700 9px/22px var(--b-body), sans-serif; }
 .t-stat { flex-direction: row; align-items: center; justify-content: center; gap: 0; }
 .t-stat b { display: flex; flex-direction: column; align-items: center; padding: 3px 7px; background: var(--b-dark); color: var(--b-light); font: 400 17px var(--b-head), sans-serif; }

@@ -41,21 +41,21 @@ const PRESETS = {
   // Covers hide part of the video, such as another channel's captions.
   cover: { name: 'Cover', kind: 'solid', width: 1, x: 0, y: 0.72, h: 0.28, bg: '$dark', edges: 'top', feather: 0.55, blur: 0.5 },
 
-  // Sports graphics, offered in Chyron Sports. Both apps can show them, so project files open in either.
-  score: { name: 'Score bug', kind: 'score', text: 'LAL 102\nBOS 99', sub: 'Q4 · 2:13', font: '$head', subFont: '$body', size: 50, y: 0.05, upper: true, team1: '#552583', team2: '#007a33', color: '$light', bg: '$dark', accent: '$accent', anim: 'wipe' },
-  stat: { name: 'Stat card', kind: 'stat', text: '50 PTS\n12 REB\n9 AST', sub: 'Career high', font: '$head', subFont: '$body', size: 120, y: 0.6, align: 'center', upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
-  scoop: { name: 'Scoop card', kind: 'scoop', tag: 'Breaking', text: 'Kevin Durant is being traded to the *Rockets*', sub: 'per @ShamsCharania', font: '$head', subFont: '$body', size: 70, y: 0.07, upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$extra', anim: 'rise' },
-  deal: { name: 'Trade card', kind: 'deal', tag: 'Here we go', text: 'Kylian Mbappé', sub: 'PSG > Real Madrid', note: 'Free transfer · Five-year deal', font: '$head', subFont: '$body', size: 84, y: 0.6, upper: true, hl: 'color', color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
-  stamp: { name: 'Stamp', kind: 'stamp', text: 'Here we go', font: '$head', size: 92, x: 0.1, width: 0.8, y: 0.3, align: 'center', upper: true, tilt: -6, color: '$accent', bg: '$dark', bgAlpha: 0.75, radius: 0.3, anim: 'pop' },
+  // Sports graphics, offered in Chyron Sports, with hockey samples. Both apps can show them, so project files open in either.
+  score: { name: 'Score bug', kind: 'score', text: 'EDM 3\nFLA 2', sub: 'P3 · 4:12', font: '$head', subFont: '$body', size: 50, y: 0.05, upper: true, team1: '#ff4c00', team2: '#c8102e', color: '$light', bg: '$dark', accent: '$accent', anim: 'wipe' },
+  stat: { name: 'Stat card', kind: 'stat', text: '3 G\n1 A\n7 SOG', sub: 'Hat trick', font: '$head', subFont: '$body', size: 120, y: 0.6, align: 'center', upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
+  scoop: { name: 'Scoop card', kind: 'scoop', tag: 'Breaking', text: 'The Oilers are acquiring a *top-four defenceman*', sub: 'per @FriedgeHNIC', font: '$head', subFont: '$body', size: 70, y: 0.07, upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$extra', anim: 'rise' },
+  deal: { name: 'Trade card', kind: 'deal', tag: 'Trade', text: 'Mikko Rantanen', sub: 'Avalanche > Hurricanes', note: '50% retained · Three-team deal', font: '$head', subFont: '$body', size: 84, y: 0.6, upper: true, hl: 'color', color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
+  stamp: { name: 'Stamp', kind: 'stamp', text: 'Goal', font: '$head', size: 92, x: 0.1, width: 0.8, y: 0.3, align: 'center', upper: true, tilt: -6, color: '$accent', bg: '$dark', bgAlpha: 0.75, radius: 0.3, anim: 'pop' },
   breaking: { name: 'Breaking tag', kind: 'lines', text: 'Breaking', font: '$head', size: 44, y: 0.1, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
-  caption: { name: 'Top caption', kind: 'lines', text: 'He really did *that* in the Finals', font: 'Inter Tight', size: 52, x: 0.06, width: 0.88, y: 0.17, align: 'center', color: '#111111', bg: '#ffffff', accent: '$extra', radius: 0.35, anim: 'pop' },
-  take: { name: 'Hot take', kind: 'lines', text: 'LeBron is *not* a top-five player', font: '$head', size: 78, y: 0.08, align: 'center', upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$accent', anim: 'marker' },
-  situation: { name: 'Game situation', kind: 'lines', text: 'Q4 · 0:03 · Down 2', size: 36, y: 0.69, upper: true, track: 0.04, dot: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'type' },
-  status: { name: 'Status tag', kind: 'lines', text: 'Out · Hamstring', font: '$head', size: 40, y: 0.2, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
-  player: { name: 'Player name bar', kind: 'lower', text: '#23 LeBron James', sub: 'Lakers · Forward', font: '$head', subFont: '$body', size: 58, y: 0.76, upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'slide' },
-  host: { name: 'Show name bar', kind: 'lower', look: 'marker', text: 'Stephen A. Smith', sub: 'First Take', font: '$head', subFont: '$body', size: 54, y: 0.74, upper: true, color: '$dark', bg: '$accent', accent: '$dark', anim: 'marker' },
+  caption: { name: 'Top caption', kind: 'lines', text: 'McDavid went *coast to coast*', font: 'Inter Tight', size: 52, x: 0.06, width: 0.88, y: 0.17, align: 'center', color: '#111111', bg: '#ffffff', accent: '$extra', radius: 0.35, anim: 'pop' },
+  take: { name: 'Hot take', kind: 'lines', text: 'The shootout should be *banned*', font: '$head', size: 78, y: 0.08, align: 'center', upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$accent', anim: 'marker' },
+  situation: { name: 'Game situation', kind: 'lines', text: 'P3 · 0:48 · Empty net', size: 36, y: 0.69, upper: true, track: 0.04, dot: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'type' },
+  status: { name: 'Status tag', kind: 'lines', text: 'Out · Upper body', font: '$head', size: 40, y: 0.2, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
+  player: { name: 'Player name bar', kind: 'lower', text: '#97 Connor McDavid', sub: 'Oilers · Center', font: '$head', subFont: '$body', size: 58, y: 0.76, upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'slide' },
+  host: { name: 'Show name bar', kind: 'lower', look: 'marker', text: 'Elliotte Friedman', sub: '32 Thoughts', font: '$head', subFont: '$body', size: 54, y: 0.74, upper: true, color: '$dark', bg: '$accent', accent: '$dark', anim: 'marker' },
   poll: { name: 'Poll prompt', kind: 'lines', text: 'Agree or disagree?', font: '$head', size: 50, y: 0.86, align: 'center', upper: true, color: '$dark', bg: '$accent', accent: '$extra', anim: 'pop' },
-  via: { name: 'Clip credit', kind: 'lines', text: 'via @NBA', size: 30, y: 0.93, bgAlpha: 0.7, anim: 'fade' },
+  via: { name: 'Clip credit', kind: 'lines', text: 'via @NHL', size: 30, y: 0.93, bgAlpha: 0.7, anim: 'fade' },
 };
 const COVERS = new Set(['solid', 'gradient', 'blur']);
 const COVER_NAMES = { solid: 'Solid cover', blur: 'Blur' };
@@ -2351,28 +2351,36 @@ $('#removeLogo').onclick = () => {
 
 // Each template swaps the graphics for a ready-made set for one kind of sports video, placed for 9:16.
 const TEMPLATES = [
-  { name: 'Scoop', hint: 'Breaking news over footage', graphics: [['scoop'], ['via']] },
-  { name: 'Trade or transfer', hint: 'Here we go, from and to', graphics: [['stamp', { y: 0.14 }], ['deal', { tag: 'Transfer' }]] },
+  { name: 'Scoop', hint: 'Insider news over footage', graphics: [['scoop'], ['via']] },
+  { name: 'Trade deadline', hint: 'Trade stamp, from and to, retained', graphics: [['stamp', { text: 'Trade', y: 0.14 }], ['deal']] },
   {
-    name: 'Highlight', hint: 'Clip with a caption above', fit: 'contain',
-    graphics: [['caption', { y: 0.17 }], ['situation', { y: 0.29 }], ['via', { y: 0.675, bgAlpha: 0 }]],
+    name: 'Goal', hint: 'Clip with a caption above', fit: 'contain',
+    graphics: [['caption', { y: 0.17 }], ['situation', { text: 'P2 · 12:04 · Power play', y: 0.29 }], ['via', { y: 0.675, bgAlpha: 0 }]],
   },
   {
-    name: 'Big stat night', hint: 'The numbers over the reel',
-    graphics: [['take', { text: 'Jokić went *off* tonight' }], ['stat', { text: '35 PTS\n18 REB\n12 AST', sub: 'Triple-double' }], ['via']],
+    name: 'Hat trick', hint: 'The line over the reel',
+    graphics: [['take', { text: 'Matthews with *three* tonight' }], ['stat'], ['via']],
+  },
+  {
+    name: 'Goalie night', hint: 'Saves and save percentage',
+    graphics: [['take', { text: 'Bobrovsky stood on his *head*' }], ['stat', { text: '41 SV\n.976 SV%\n1 GA', sub: 'Shutout bid' }], ['via']],
   },
   {
     name: 'Final score', hint: 'Score bug and a caption',
-    graphics: [['score', { text: 'BOS 104\nDAL 88', sub: 'Final', size: 64, y: 0.07, align: 'center', team1: '#007a33', team2: '#00538c' }], ['caption', { text: 'The Celtics are *champions*', y: 0.14 }], ['via']],
+    graphics: [['score', { text: 'FLA 4\nEDM 3', sub: 'Final/OT', size: 64, y: 0.07, align: 'center', team1: '#c8102e', team2: '#ff4c00' }], ['caption', { text: 'The Panthers win it in *overtime*', y: 0.14 }], ['via']],
+  },
+  {
+    name: 'Fight', hint: 'Fight stamp and the penalties',
+    graphics: [['stamp', { text: 'Fight', color: '$extra', y: 0.12 }], ['situation', { text: 'P1 · 8:31 · Five for fighting', y: 0.25 }], ['via']],
   },
   { name: 'Hot take', hint: 'The take, who said it, a poll', tip: 'Add Captions for word-by-word captions.', graphics: [['take'], ['host'], ['poll']] },
   {
-    name: 'Press conference', hint: 'Quote and name bar', tip: 'Add Captions to write out what’s said.',
-    graphics: [['quote', { text: 'We just didn’t *compete* tonight.', sub: 'Joe Mazzulla', y: 0.08 }], ['player', { text: 'Joe Mazzulla', sub: 'Celtics · Head coach' }], ['via', { text: 'via @celtics' }]],
+    name: 'Postgame', hint: 'Quote and name bar', tip: 'Add Captions to write out what’s said.',
+    graphics: [['quote', { text: 'We have to be *better* in our own end.', sub: 'Kris Knoblauch', y: 0.08 }], ['player', { text: 'Kris Knoblauch', sub: 'Oilers · Head coach' }], ['via', { text: 'via @EdmontonOilers' }]],
   },
   {
     name: 'Reaction', hint: 'Caption and the score',
-    graphics: [['caption', { text: 'His reaction to the *buzzer-beater*', y: 0.07 }], ['score', { y: 0.16, align: 'center', sub: 'Final' }]],
+    graphics: [['caption', { text: 'The bench reaction to the *OT winner*', y: 0.07 }], ['score', { y: 0.16, align: 'center', sub: 'Final/OT' }]],
   },
 ];
 
