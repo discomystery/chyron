@@ -84,25 +84,28 @@ const LOOKS = {
       quote: { look: 'classic', radius: 0.1 },
     },
   },
-  // The arena scoreboard, crossed with a stats terminal. Big numbers are lit LED type on dotted panels, where
-  // dot-matrix reads at a glance; everything smaller is set in a code-style mono face, flat and sharp.
+  // A stats terminal with a scoreboard in it. Only the teams and scores, and the big numbers on a stat card,
+  // are lit LED type on dotted panels, where dot-matrix reads at a glance. Everything else is set like code: a
+  // mono face, prompts and brackets around the words, a caret after headlines and credits as comments.
   jumbotron: {
-    name: 'Scoreboard', hint: 'LED numbers, code-style mono type',
-    brand: { dark: '#050505', light: '#ffffff', main: '#ffb000', accent: '#ffb000', extra: '#ff2d2d', head: 'JetBrains Mono', body: 'JetBrains Mono' },
-    all: { slant: 0, sheen: false, radius: 0, bgAlpha: 1, edge: '', led: false, glow: false, upper: false, hl: 'color', color: '$light', bg: '$dark', accent: '$accent' },
+    name: 'Scoreboard', hint: 'LED scores, everything else like code',
+    brand: { dark: '#0b0e13', light: '#e6edf3', main: '#ffb000', accent: '#ffb000', extra: '#ff5f56', head: 'JetBrains Mono', body: 'JetBrains Mono' },
+    all: { slant: 0, sheen: false, radius: 0, bgAlpha: 1, edge: '', led: false, glow: false, upper: false, track: -0.02, hl: 'color', dot: false, pre: '', post: '', caret: false, color: '$light', bg: '$dark', accent: '$accent' },
     kinds: {
-      score: { font: 'Doto', upper: true, led: true, glow: true },
-      stat: { font: 'Doto', upper: true, led: true, glow: true },
-      stamp: { font: 'Doto', upper: true, led: true, glow: true, tilt: 0, ring: false, color: '$extra', bg: '$dark' },
-      breaking: { upper: true, color: '$extra' },
-      status: { upper: true, color: '$accent' },
-      situation: { upper: true, color: '$accent' },
-      scoop: { edge: 'top', edgeColor: '$extra', accent: '$extra' },
-      deal: { edge: 'top', edgeColor: '$accent', upper: true },
-      poll: { color: '$dark', bg: '$accent' },
-      via: { bgAlpha: 0.75 },
-      player: { look: 'classic', upper: true },
-      host: { look: 'classic', upper: true, accent: '$accent' },
+      score: { font: 'Doto', upper: true, track: 0, led: true, glow: true },
+      stat: { font: 'Doto', upper: false, track: 0, led: true, glow: true },
+      stamp: { upper: true, tilt: 0, ring: false, pre: '[', post: ']', color: '$extra', bg: '$dark' },
+      breaking: { upper: true, pre: '[', post: ']', color: '$extra' },
+      status: { upper: true, pre: '[', post: ']', color: '$accent' },
+      situation: { pre: '> ', color: '$accent' },
+      scoop: { edge: 'top', edgeColor: '$extra', accent: '$extra', caret: true },
+      deal: { edge: 'top', edgeColor: '$accent' },
+      caption: { caret: true },
+      take: { caret: true },
+      poll: { pre: '> ', caret: true, color: '$dark', bg: '$accent' },
+      via: { pre: '// ', color: '#8b949e', bgAlpha: 0.8 },
+      player: { look: 'classic' },
+      host: { look: 'classic', accent: '$accent' },
       quote: { look: 'classic' },
     },
   },
@@ -218,14 +221,18 @@ function makeOverlay(type, extra = {}) {
   return resolveBrand({ ...BASE, ...PRESETS[type], ...lookFor(type), type, id: uid(), ...extra });
 }
 
+const LOOK_KEYS = [...new Set(Object.values(LOOKS).flatMap((l) => [l.all, ...Object.values(l.kinds)].flatMap(Object.keys)))];
+
 // Switches to another look: the brand takes its colors and typefaces, and the sports graphics are redrawn in it.
 function applyLook(name) {
   if (!LOOKS[name] || state.brand.look === name) return;
   Object.assign(state.brand, LOOKS[name].brand, { look: name });
   for (const o of state.overlays) {
     if (!SPORT_TYPES.has(o.type)) continue;
-    const p = PRESETS[o.type];
-    Object.assign(o, resolveBrand({ font: p.font || BASE.font, subFont: p.subFont, ...lookFor(o.type) }));
+    // Whatever any look sets goes back to the graphic's own default first, so nothing carries over from the last look.
+    const base = { ...BASE, ...PRESETS[o.type] };
+    const reset = Object.fromEntries(LOOK_KEYS.map((k) => [k, base[k]]));
+    Object.assign(o, resolveBrand({ ...reset, font: base.font, subFont: base.subFont, ...lookFor(o.type) }));
   }
   renderLooks();
   renderBrand();
@@ -1676,7 +1683,9 @@ function drawFrame(t, animate, paintBackground) {
     o._box = null;
     const end = endOf(o);
     if (t < o.start || t > end) continue;
-    const text = o.cues ? cueText(o, t) : o.text;
+    let text = o.cues ? cueText(o, t) : o.text;
+    // Code-style dressing: a prompt or bracket before, a bracket after, and a caret that blinks during playback.
+    if (o.pre || o.post || o.caret) text = (o.pre || '') + text + (o.post || '') + (o.caret ? (animate && Math.floor(t * 2) % 2 ? '\u00a0' : '\u258c') : '');
     const L = LAYOUTS[o.kind](o, o.upper ? text.toUpperCase() : text, o.x * W, o.y * H, o.width * W, u);
     o._box = L;
     let pin = 1, pout = 1;
@@ -1694,10 +1703,12 @@ function drawFrame(t, animate, paintBackground) {
       if (L.handles && L.handles.has(type)) fx = fx || { type, p, out };
       else applyEffect(type, p, L, u, out);
     }
-    // Glow: lit letters bleed a little light in their own color. Only the letters glow, never the boxes.
+    // Glow: lit letters bleed a little light in their own color. Only letters glow, never boxes.
     if (o.glow) {
       const fillText = ctx.fillText;
       ctx.fillText = function (...args) {
+        // Only the graphic's own typeface glows (a score bug's teams and scores), not its small print.
+        if (!this.font.includes(o.font)) return fillText.apply(this, args);
         this.save();
         this.shadowColor = this.fillStyle;
         this.shadowBlur = 12 * u;
