@@ -359,6 +359,8 @@ textarea:disabled { background: transparent; }
 #keyMove button { gap: 5px; font-size: 12px; }
 .zoom-row .num { flex: 1; margin: 0; }
 .zoom-row .w { font-size: 13px; }
+.follow-row { margin-top: 12px; }
+.follow-row button { width: 100%; }
 #resetFrame { width: 38px; height: 36px; padding: 0; }
 
 /* Shape tiles for export and cover images. */
