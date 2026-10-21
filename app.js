@@ -18,7 +18,7 @@ const FONTS = [
   { name: 'Inter Tight', weight: 800 },
   { name: 'Space Mono', weight: 700 },
   // Chyron Sports' own typefaces.
-  ...(SPORTS ? [{ name: 'Big Shoulders Display', weight: 900 }, { name: 'Saira Condensed', weight: 700 }, { name: 'Doto', weight: 900 }] : []),
+  ...(SPORTS ? [{ name: 'Big Shoulders Display', weight: 900 }, { name: 'Saira Condensed', weight: 700 }, { name: 'Doto', weight: 900 }, { name: 'JetBrains Mono', weight: 800 }] : []),
 ];
 // Chyron Sports looks. Each is a whole visual system: the brand's colors and typefaces, and how each sports
 // graphic is drawn. Accents always belong to a box (an edge band, a tag, a strip), so nothing floats loose.
@@ -84,25 +84,25 @@ const LOOKS = {
       quote: { look: 'classic', radius: 0.1 },
     },
   },
-  // The arena scoreboard: black LED panels with lit, glowing type. Dot-matrix type is kept for numbers and
-  // short calls, where it reads instantly; anything you have to read in a sentence is set in a plain face.
+  // The arena scoreboard, crossed with a stats terminal. Big numbers are lit LED type on dotted panels, where
+  // dot-matrix reads at a glance; everything smaller is set in a code-style mono face, flat and sharp.
   jumbotron: {
-    name: 'Jumbotron', hint: 'Arena LED board, lit type on black',
-    brand: { dark: '#050505', light: '#ffffff', main: '#ffb000', accent: '#ffb000', extra: '#ff2d2d', head: 'Saira Condensed', body: 'Saira Condensed' },
-    all: { slant: 0, sheen: false, radius: 0, bgAlpha: 1, edge: '', led: true, glow: true, upper: true, hl: 'color', color: '$light', bg: '$dark', accent: '$accent' },
+    name: 'Scoreboard', hint: 'LED numbers, code-style mono type',
+    brand: { dark: '#050505', light: '#ffffff', main: '#ffb000', accent: '#ffb000', extra: '#ff2d2d', head: 'JetBrains Mono', body: 'JetBrains Mono' },
+    all: { slant: 0, sheen: false, radius: 0, bgAlpha: 1, edge: '', led: false, glow: false, upper: false, hl: 'color', color: '$light', bg: '$dark', accent: '$accent' },
     kinds: {
-      score: { font: 'Doto' },
-      stat: { font: 'Doto' },
-      stamp: { font: 'Doto', tilt: 0, ring: false, color: '$extra', bg: '$dark' },
-      breaking: { font: 'Doto', color: '$extra' },
-      status: { font: 'Doto', color: '$accent' },
-      situation: { color: '$accent' },
+      score: { font: 'Doto', upper: true, led: true, glow: true },
+      stat: { font: 'Doto', upper: true, led: true, glow: true },
+      stamp: { font: 'Doto', upper: true, led: true, glow: true, tilt: 0, ring: false, color: '$extra', bg: '$dark' },
+      breaking: { upper: true, color: '$extra' },
+      status: { upper: true, color: '$accent' },
+      situation: { upper: true, color: '$accent' },
       scoop: { edge: 'top', edgeColor: '$extra', accent: '$extra' },
-      deal: { edge: 'top', edgeColor: '$accent' },
-      poll: { color: '$dark', bg: '$accent', led: false, glow: false },
-      via: { led: false, glow: false, bgAlpha: 0.75 },
-      player: { look: 'classic' },
-      host: { look: 'classic', accent: '$accent' },
+      deal: { edge: 'top', edgeColor: '$accent', upper: true },
+      poll: { color: '$dark', bg: '$accent' },
+      via: { bgAlpha: 0.75 },
+      player: { look: 'classic', upper: true },
+      host: { look: 'classic', upper: true, accent: '$accent' },
       quote: { look: 'classic' },
     },
   },
