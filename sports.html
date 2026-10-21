@@ -234,7 +234,11 @@
       <label class="check" data-group="style" data-for="lines"><input data-k="dot" type="checkbox"> Dot before the text</label>
       <label class="f cued" data-group="style" data-for="lines lower quote text score stat scoop deal stamp"><span class="w">Slant</span><svg class="ic fi" aria-hidden="true"><use href="#i-deal"/></svg><input data-k="slant" type="range" min="0" max="0.4" step="0.02" aria-label="Slant"></label>
       <label class="check" data-group="style" data-for="lines lower quote text score stat scoop deal stamp"><input data-k="sheen" type="checkbox"> Sheen on the boxes</label>
-      <label class="check" data-group="style" data-for="lines lower quote text score stat scoop deal"><input data-k="stripe" type="checkbox"> Stripe in front</label>
+      <label class="f" data-group="style" data-for="lines lower quote text score stat scoop deal"><span class="w">Edge</span><select data-k="edge" aria-label="Edge">
+        <option value="">None</option>
+        <option value="left">Along the leading side</option>
+        <option value="top">Along the top</option>
+      </select></label>
 
       <div class="f" data-group="color" data-for="lines lower quote text solid score stat scoop deal stamp"><span class="w">Colors</span>
         <div class="looks" id="looks" data-for="lines lower quote text solid score stat scoop deal stamp"></div>
@@ -242,7 +246,7 @@
           <label data-for="lines lower quote text score stat scoop deal stamp" title="Text color"><span>Text</span><input data-k="color" type="color"></label>
           <label data-for="lines lower quote solid score stat scoop deal stamp" title="Box color"><span>Box</span><input data-k="bg" type="color"></label>
           <label data-for="lines lower quote text score stat scoop deal" title="Highlight color"><span id="accentLabel">Highlight</span><input data-k="accent" type="color"></label>
-          <label data-for="lines lower quote text score stat scoop deal" title="Stripe color"><span>Stripe</span><input data-k="stripeColor" type="color"></label>
+          <label data-for="lines lower quote text score stat scoop deal" title="Edge color"><span>Edge</span><input data-k="edgeColor" type="color"></label>
           <label data-for="score" title="First team's color"><span>Team 1</span><input data-k="team1" type="color"></label>
           <label data-for="score" title="Second team's color"><span>Team 2</span><input data-k="team2" type="color"></label>
         </div>
@@ -373,6 +377,10 @@
   <button type="button" id="brandClose" class="icon dlg-close" aria-label="Close brand kit"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
   <h2>Brand kit</h2>
   <p class="hint">New graphics start with these. Changing a color or typeface here also updates the graphics that use it.</p>
+  <div class="f">Look
+    <div class="look-pick" id="lookPick"></div>
+    <small>Choosing a look sets the colors and typefaces below and restyles the sports graphics.</small>
+  </div>
   <div class="f">Colors
     <div class="colors">
       <label>Dark<input data-b="dark" type="color"></label>

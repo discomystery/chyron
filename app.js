@@ -20,9 +20,73 @@ const FONTS = [
   // Chyron Sports' own typefaces.
   ...(SPORTS ? [{ name: 'Big Shoulders Display', weight: 900 }, { name: 'Saira Condensed', weight: 700 }] : []),
 ];
+// Chyron Sports looks. Each is a whole visual system: the brand's colors and typefaces, and how each sports
+// graphic is drawn. Accents always belong to a box (an edge band, a tag, a strip), so nothing floats loose.
+const SPORT_TYPES = new Set(['score', 'stat', 'scoop', 'deal', 'stamp', 'breaking', 'caption', 'take', 'situation', 'status', 'player', 'host', 'poll', 'via', 'quote']);
+const LOOKS = {
+  // Flat square panels with a red edge, set upright in capitals, like a TV scorebug.
+  broadcast: {
+    name: 'Broadcast', hint: 'Flat panels, red edge, like a TV scorebug',
+    brand: { dark: '#0e1a2b', light: '#ffffff', main: '#2a5bd7', accent: '#e31837', extra: '#e31837', head: 'Oswald', body: 'Saira Condensed' },
+    all: { slant: 0, sheen: true, radius: 0, bgAlpha: 1, edge: 'left', edgeColor: '$accent', upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$accent' },
+    kinds: {
+      score: { edge: '' },
+      stat: { edge: '' },
+      stamp: { edge: '', tilt: 0, ring: false, bg: '$accent' },
+      breaking: { edge: '', bg: '$accent' },
+      status: { edge: '', bg: '$accent' },
+      caption: { color: '$dark', bg: '$light' },
+      poll: { color: '$dark', bg: '$light' },
+      via: { edge: '', sheen: false, bgAlpha: 0.75 },
+      player: { edge: '', look: 'classic' },
+      host: { edge: '', look: 'classic', bg: '$main', accent: '$light' },
+      quote: { edge: '', look: 'classic' },
+    },
+  },
+  // Everything leans forward with a gloss, in ice blue and goal-light red.
+  slapshot: {
+    name: 'Slapshot', hint: 'Leaning, glossy, ice blue and red',
+    brand: { dark: '#0b1a33', light: '#ffffff', main: '#1e63ff', accent: '#5fd0ff', extra: '#e4002b', head: 'Big Shoulders Display', body: 'Saira Condensed' },
+    all: { slant: 0.2, sheen: true, radius: 0, bgAlpha: 1, edge: 'left', edgeColor: '$extra', upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$accent' },
+    kinds: {
+      score: { edge: '' },
+      stat: { edge: '' },
+      scoop: { accent: '$extra' },
+      stamp: { edge: '', slant: 0, tilt: -6, ring: true, bg: '$extra' },
+      breaking: { edge: '', bg: '$extra' },
+      status: { edge: '', bg: '$extra' },
+      caption: { color: '$dark', bg: '$light', upper: false },
+      poll: { edge: '', color: '$dark', bg: '$accent' },
+      via: { edge: '', sheen: false, bgAlpha: 0.75 },
+      player: { edge: '', look: 'classic' },
+      host: { edge: '', look: 'classic', bg: '$main', accent: '$light' },
+      quote: { edge: '', look: 'classic' },
+    },
+  },
+  // Light frosted panels in sentence case, with red only where it means something.
+  ice: {
+    name: 'Ice', hint: 'Light panels, sentence case, calm',
+    brand: { dark: '#0b1a33', light: '#f3f7fb', main: '#1e63ff', accent: '#e4002b', extra: '#e4002b', head: 'Archivo', body: 'Saira Condensed' },
+    all: { slant: 0, sheen: false, radius: 0.2, bgAlpha: 0.95, edge: '', upper: false, hl: 'color', color: '$dark', bg: '$light', accent: '$accent' },
+    kinds: {
+      scoop: { edge: 'top', radius: 0.1 },
+      deal: { edge: 'top', radius: 0.1 },
+      stat: { radius: 0.1 },
+      score: { upper: true },
+      situation: { upper: true },
+      stamp: { tilt: 0, ring: true, color: '$accent', bg: '$light' },
+      breaking: { upper: true, color: '#ffffff', bg: '$accent' },
+      status: { upper: true, color: '#ffffff', bg: '$accent' },
+      poll: { color: '#ffffff', bg: '$accent' },
+      via: { bgAlpha: 0.8 },
+      player: { look: 'classic' },
+      host: { look: 'classic' },
+      quote: { look: 'classic', radius: 0.1 },
+    },
+  },
+};
 const DEFAULT_BRAND = SPORTS
-  // Rink colors: navy boards, ice blue, the blue line and the goal light.
-  ? { dark: '#0b1a33', light: '#ffffff', main: '#1e63ff', accent: '#5fd0ff', extra: '#e4002b', head: 'Big Shoulders Display', body: 'Saira Condensed', logo: null, v: 2 }
+  ? { ...LOOKS.broadcast.brand, look: 'broadcast', logo: null, v: 2 }
   : { dark: '#111111', light: '#ffffff', main: '#1740e0', accent: '#ffd400', extra: '#e4262c', head: 'Inter Tight', body: 'Space Mono', logo: null, v: 2 };
 // Values starting with $ are filled in from the brand kit when a graphic is made.
 const BASE = {
@@ -45,20 +109,20 @@ const PRESETS = {
   cover: { name: 'Cover', kind: 'solid', width: 1, x: 0, y: 0.72, h: 0.28, bg: '$dark', edges: 'top', feather: 0.55, blur: 0.5 },
 
   // Sports graphics, offered in Chyron Sports, with hockey samples. Both apps can show them, so project files open in either.
-  score: { name: 'Score bug', kind: 'score', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: 'EDM 3\nFLA 2', sub: 'P3 · 4:12', font: '$head', subFont: '$body', size: 50, y: 0.05, upper: true, team1: '#ff4c00', team2: '#c8102e', color: '$light', bg: '$dark', accent: '$accent', anim: 'wipe' },
-  stat: { name: 'Stat card', kind: 'stat', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: '3 G\n1 A\n7 SOG', sub: 'Hat trick', font: '$head', subFont: '$body', size: 120, y: 0.6, align: 'center', upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
-  scoop: { name: 'Scoop card', kind: 'scoop', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', tag: 'Breaking', text: 'The Oilers are acquiring a *top-four defenceman*', sub: 'per @FriedgeHNIC', font: '$head', subFont: '$body', size: 70, y: 0.07, upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$extra', anim: 'rise' },
-  deal: { name: 'Trade card', kind: 'deal', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', tag: 'Trade', text: 'Mikko Rantanen', sub: 'Avalanche > Hurricanes', note: '50% retained · Three-team deal', font: '$head', subFont: '$body', size: 84, y: 0.6, upper: true, hl: 'color', color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
+  score: { name: 'Score bug', kind: 'score', text: 'EDM 3\nFLA 2', sub: 'P3 · 4:12', font: '$head', subFont: '$body', size: 50, y: 0.05, upper: true, team1: '#ff4c00', team2: '#c8102e', color: '$light', bg: '$dark', accent: '$accent', anim: 'wipe' },
+  stat: { name: 'Stat card', kind: 'stat', text: '3 G\n1 A\n7 SOG', sub: 'Hat trick', font: '$head', subFont: '$body', size: 120, y: 0.6, align: 'center', upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
+  scoop: { name: 'Scoop card', kind: 'scoop', tag: 'Breaking', text: 'The Oilers are acquiring a *top-four defenceman*', sub: 'per @FriedgeHNIC', font: '$head', subFont: '$body', size: 70, y: 0.07, upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$extra', anim: 'rise' },
+  deal: { name: 'Trade card', kind: 'deal', tag: 'Trade', text: 'Mikko Rantanen', sub: 'Avalanche > Hurricanes', note: '50% retained · Three-team deal', font: '$head', subFont: '$body', size: 84, y: 0.6, upper: true, hl: 'color', color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
   stamp: { name: 'Stamp', kind: 'stamp', text: 'Goal', font: '$head', size: 96, x: 0.1, width: 0.8, y: 0.3, align: 'center', upper: true, tilt: -6, sheen: true, color: '$light', bg: '$extra', radius: 0.12, anim: 'pop' },
-  breaking: { name: 'Breaking tag', kind: 'lines', slant: 0.2, sheen: true, stripe: true, stripeColor: '$accent', text: 'Breaking', font: '$head', size: 44, y: 0.1, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
-  caption: { name: 'Top caption', kind: 'lines', slant: 0.2, stripe: true, stripeColor: '$extra', text: 'McDavid went *coast to coast*', size: 60, x: 0.06, width: 0.88, y: 0.17, align: 'center', color: '$dark', bg: '$light', hl: 'box', accent: '$accent', anim: 'slide' },
-  take: { name: 'Hot take', kind: 'lines', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: 'The shootout should be *banned*', font: '$head', size: 84, y: 0.08, align: 'center', upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$accent', anim: 'wipe' },
-  situation: { name: 'Game situation', kind: 'lines', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: 'P3 · 0:48 · Empty net', size: 36, y: 0.69, upper: true, track: 0.04, dot: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'slide' },
-  status: { name: 'Status tag', kind: 'lines', slant: 0.2, sheen: true, stripe: true, stripeColor: '$accent', text: 'Out · Upper body', font: '$head', size: 40, y: 0.2, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
-  player: { name: 'Player name bar', kind: 'lower', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: '#97 Connor McDavid', sub: 'Oilers · Center', font: '$head', subFont: '$body', size: 58, y: 0.76, upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'slide' },
-  host: { name: 'Show name bar', kind: 'lower', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: 'Elliotte Friedman', sub: '32 Thoughts', font: '$head', subFont: '$body', size: 54, y: 0.74, upper: true, color: '$light', bg: '$main', accent: '$light', anim: 'slide' },
-  poll: { name: 'Poll prompt', kind: 'lines', slant: 0.2, sheen: true, stripe: true, stripeColor: '$extra', text: 'Agree or disagree?', font: '$head', size: 50, y: 0.86, align: 'center', upper: true, color: '$dark', bg: '$accent', accent: '$extra', anim: 'pop' },
-  via: { name: 'Clip credit', kind: 'lines', slant: 0.2, text: 'via @NHL', size: 30, y: 0.93, bgAlpha: 0.7, anim: 'fade' },
+  breaking: { name: 'Breaking tag', kind: 'lines', text: 'Breaking', font: '$head', size: 44, y: 0.1, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
+  caption: { name: 'Top caption', kind: 'lines', text: 'McDavid went *coast to coast*', size: 60, x: 0.06, width: 0.88, y: 0.17, align: 'center', color: '$dark', bg: '$light', hl: 'box', accent: '$accent', anim: 'slide' },
+  take: { name: 'Hot take', kind: 'lines', text: 'The shootout should be *banned*', font: '$head', size: 84, y: 0.08, align: 'center', upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$accent', anim: 'wipe' },
+  situation: { name: 'Game situation', kind: 'lines', text: 'P3 · 0:48 · Empty net', size: 36, y: 0.69, upper: true, track: 0.04, dot: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'slide' },
+  status: { name: 'Status tag', kind: 'lines', text: 'Out · Upper body', font: '$head', size: 40, y: 0.2, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
+  player: { name: 'Player name bar', kind: 'lower', text: '#97 Connor McDavid', sub: 'Oilers · Center', font: '$head', subFont: '$body', size: 58, y: 0.76, upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'slide' },
+  host: { name: 'Show name bar', kind: 'lower', text: 'Elliotte Friedman', sub: '32 Thoughts', font: '$head', subFont: '$body', size: 54, y: 0.74, upper: true, color: '$light', bg: '$main', accent: '$light', anim: 'slide' },
+  poll: { name: 'Poll prompt', kind: 'lines', text: 'Agree or disagree?', font: '$head', size: 50, y: 0.86, align: 'center', upper: true, color: '$dark', bg: '$accent', accent: '$extra', anim: 'pop' },
+  via: { name: 'Clip credit', kind: 'lines', text: 'via @NHL', size: 30, y: 0.93, bgAlpha: 0.7, anim: 'fade' },
 };
 const COVERS = new Set(['solid', 'gradient', 'blur']);
 const COVER_NAMES = { solid: 'Solid cover', blur: 'Blur' };
@@ -116,14 +180,36 @@ function fmt(t) {
 /* ---------- graphics: creating ---------- */
 
 function resolveBrand(o) {
-  for (const k of ['font', 'subFont', 'color', 'bg', 'accent', 'team1', 'team2', 'stripeColor']) {
+  for (const k of ['font', 'subFont', 'color', 'bg', 'accent', 'team1', 'team2', 'edgeColor']) {
     if (typeof o[k] === 'string' && o[k][0] === '$') o[k] = state.brand[o[k].slice(1)];
   }
   return o;
 }
 
+// How the brand's chosen look draws this kind of graphic (Chyron Sports only).
+function lookFor(type) {
+  const look = SPORTS && SPORT_TYPES.has(type) && LOOKS[state.brand.look];
+  return look ? { ...look.all, ...look.kinds[type] } : {};
+}
+
 function makeOverlay(type, extra = {}) {
-  return resolveBrand({ ...BASE, ...PRESETS[type], type, id: uid(), ...extra });
+  return resolveBrand({ ...BASE, ...PRESETS[type], ...lookFor(type), type, id: uid(), ...extra });
+}
+
+// Switches to another look: the brand takes its colors and typefaces, and the sports graphics are redrawn in it.
+function applyLook(name) {
+  if (!LOOKS[name] || state.brand.look === name) return;
+  Object.assign(state.brand, LOOKS[name].brand, { look: name });
+  for (const o of state.overlays) {
+    if (!SPORT_TYPES.has(o.type)) continue;
+    const p = PRESETS[o.type];
+    Object.assign(o, resolveBrand({ font: p.font || BASE.font, subFont: p.subFont, ...lookFor(o.type) }));
+  }
+  renderLooks();
+  renderBrand();
+  fillInspector();
+  commit();
+  toast(`Switched to the ${LOOKS[name].name} look.`, true);
 }
 
 // A highlight needs a color that shows: against the text for colored or underlined words, against the
@@ -829,6 +915,16 @@ function fillBox(o, x, y, w, h, r) {
     ctx.fill();
   }
   ctx.globalAlpha = a;
+  // Edge: a band of color along the box's leading side or its top, inside the box so it moves with it.
+  if (o.edge === 'left' || o.edge === 'top') {
+    const band = Math.min((o.edge === 'top' ? 0.08 : 0.14) * h, (10 * Math.min(canvas.width, canvas.height)) / 1080);
+    ctx.save();
+    ctx.clip();
+    ctx.fillStyle = o.edgeColor || o.accent;
+    if (o.edge === 'top') ctx.fillRect(x, y, w, band);
+    else ctx.fillRect(x, y, band, h);
+    ctx.restore();
+  }
 }
 
 function readable(hex) {
@@ -1215,8 +1311,10 @@ const LAYOUTS = {
         ctx.roundRect(bx, by, bw, h, o.radius * fs * 0.6);
         ctx.clip();
         fillBox(o, bx, by, bw, h, 0);
-        ctx.fillStyle = o.accent;
-        ctx.fillRect(bx, by + h - fs * 0.07, bw, fs * 0.07);
+        if (!o.edge) {
+          ctx.fillStyle = o.accent;
+          ctx.fillRect(bx, by + h - fs * 0.07, bw, fs * 0.07);
+        }
         ctx.restore();
         if (tag) {
           const tx = alignX(o, bx + pad, inner, tagW), ty = by + pad;
@@ -1281,6 +1379,7 @@ const LAYOUTS = {
         ctx.rotate(((o.tilt || 0) * Math.PI) / 180);
         ctx.translate(-cx, -cy);
         fillBox(o, x, by, w, h, r);
+        if (o.ring === false) return paintText();
         ctx.strokeStyle = o.color;
         ctx.lineWidth = line;
         ctx.beginPath();
@@ -1290,9 +1389,12 @@ const LAYOUTS = {
         ctx.beginPath();
         ctx.roundRect(x + line * 2, by + line * 2, w - line * 4, h - line * 4, Math.max(0, r - line * 2));
         ctx.stroke();
-        setFont(o, fs);
-        ctx.fillStyle = o.color;
-        ctx.fillText(text, x + padX, by + (h + cap) / 2);
+        paintText();
+        function paintText() {
+          setFont(o, fs);
+          ctx.fillStyle = o.color;
+          ctx.fillText(text, x + padX, by + (h + cap) / 2);
+        }
       },
     };
   },
@@ -1550,12 +1652,6 @@ function drawFrame(t, animate, paintBackground) {
       if (p >= 1) continue;
       if (L.handles && L.handles.has(type)) fx = fx || { type, p, out };
       else applyEffect(type, p, L, u, out);
-    }
-    // Stripe: a bar of color leading the graphic, like a goal light.
-    if (o.stripe && !COVERS.has(o.kind) && o.kind !== 'image') {
-      const sw = Math.max(4, 12 * u);
-      ctx.fillStyle = o.stripeColor || state.brand.extra;
-      ctx.fillRect(L.ix - sw * 1.8, L.y, sw, L.h);
     }
     L.paint(fx);
     ctx.restore();
@@ -2318,6 +2414,8 @@ function renderBrand() {
   const b = state.brand;
   const root = document.documentElement.style;
   for (const k of ['dark', 'light', 'main', 'accent', 'extra']) root.setProperty(`--b-${k}`, b[k]);
+  if (SPORTS) document.documentElement.dataset.look = b.look;
+  renderLookPick();
   root.setProperty('--b-head', `"${b.head}"`);
   root.setProperty('--b-body', `"${b.body}"`);
   document.querySelectorAll('[data-b]').forEach((el) => (el.value = b[el.dataset.b]));
@@ -2332,6 +2430,23 @@ function renderBrand() {
       save();
     }],
   ])));
+}
+
+// Chyron Sports: the looks, each shown as a little graphic in its own colors and typeface.
+function renderLookPick() {
+  const box = $('#lookPick');
+  if (!box) return;
+  box.replaceChildren(...Object.entries(LOOKS).map(([key, look]) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = `look-${key}`;
+    b.setAttribute('aria-pressed', state.brand.look === key);
+    const swatch = Object.assign(document.createElement('b'), { textContent: key === 'ice' ? 'Goal' : 'GOAL' });
+    Object.assign(swatch.style, { fontFamily: `"${look.brand.head}"`, background: key === 'ice' ? look.brand.light : look.brand.dark, color: key === 'ice' ? look.brand.dark : look.brand.light, borderColor: look.brand.extra });
+    b.append(swatch, Object.assign(document.createElement('span'), { textContent: look.name }), Object.assign(document.createElement('small'), { textContent: look.hint }));
+    b.onclick = () => applyLook(key);
+    return b;
+  }));
 }
 
 $('#brand').addEventListener('input', (e) => {
@@ -2396,7 +2511,7 @@ const TEMPLATES = [
   { name: 'Hot take', hint: 'The take, who said it, a poll', tip: 'Add Captions for word-by-word captions.', graphics: [['take'], ['host'], ['poll']] },
   {
     name: 'Postgame', hint: 'Quote and name bar', tip: 'Add Captions to write out what’s said.',
-    graphics: [['quote', { text: 'We have to be *better* in our own end.', sub: 'Kris Knoblauch', look: 'classic', slant: 0.2, sheen: true, y: 0.08 }], ['player', { text: 'Kris Knoblauch', sub: 'Oilers · Head coach' }], ['via', { text: 'via @EdmontonOilers' }]],
+    graphics: [['quote', { text: 'We have to be *better* in our own end.', sub: 'Kris Knoblauch', look: 'classic', y: 0.08 }], ['player', { text: 'Kris Knoblauch', sub: 'Oilers · Head coach' }], ['via', { text: 'via @EdmontonOilers' }]],
   },
   {
     name: 'Reaction', hint: 'Caption and the score',

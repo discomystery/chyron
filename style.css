@@ -224,18 +224,44 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
 .t-poll { align-items: center; justify-content: flex-end; padding-bottom: 7px; }
 .t-poll b { padding: 3px 6px; background: var(--b-accent); color: var(--b-dark); font: 400 11px var(--b-head), sans-serif; text-transform: uppercase; }
 
-/* Chyron Sports' broadcast look in the previews: leaning shapes, a gloss, and a red stripe in front. */
-[data-edition="sports"] .thumb:is(.t-scoop, .t-score, .t-stat, .t-deal, .t-breaking, .t-caption, .t-take, .t-situation, .t-player, .t-poll, .t-lower, .t-credit) > * { transform: skewX(-11deg); }
-[data-edition="sports"] .thumb:is(.t-scoop, .t-score, .t-stat, .t-deal, .t-take, .t-situation, .t-player, .t-caption, .t-poll, .t-lower) { padding-left: 18px; }
-[data-edition="sports"] .thumb:is(.t-score, .t-take, .t-situation, .t-caption, .t-poll) b,
-[data-edition="sports"] :is(.t-scoop, .t-deal, .t-player, .t-lower) > b { box-shadow: -6px 0 0 -2px var(--b-extra); background-image: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.2)); }
-[data-edition="sports"] .t-caption b { border-radius: 0; background-color: var(--b-light); color: var(--b-dark); font: 400 13px var(--b-head), sans-serif; text-transform: uppercase; }
-[data-edition="sports"] .t-caption b em { padding: 0 2px; background: var(--b-accent); color: var(--b-dark); }
-[data-edition="sports"] .t-stamp b { border: 2px solid #fff; border-radius: 3px; background: var(--b-extra); color: #fff; }
-[data-edition="sports"] .t-lower b { background: var(--b-main); color: #fff; }
-[data-edition="sports"] .t-lower i { background: var(--b-dark); }
-[data-edition="sports"] .t-lower i em { display: none; }
-[data-edition="sports"] .t-poll b, [data-edition="sports"] .t-take b em, [data-edition="sports"] .t-player i { color: var(--b-dark); }
+/* Chyron Sports previews follow the chosen look (renderBrand sets data-look on the page). */
+[data-look] .t-caption b { border-radius: 0; background: var(--b-light); color: var(--b-dark); font: 400 13px var(--b-head), sans-serif; text-transform: uppercase; }
+[data-look] .t-caption b em { padding: 0 2px; background: var(--b-accent); color: var(--b-light); }
+[data-look] .t-lower b { background: var(--b-main); color: #fff; }
+[data-look] .t-lower i { background: var(--b-light); color: var(--b-dark); }
+[data-look] .t-lower i em { display: none; }
+[data-look] .t-player b { border-left-color: var(--b-accent); }
+[data-look] .t-player i, [data-look] .t-deal i { background: var(--b-accent); color: #fff; }
+[data-look] .t-take b em, [data-look] .t-scoop b em { background: var(--b-accent); color: #fff; }
+[data-look] .t-stat small, [data-look] .t-deal small { color: var(--b-light); }
+[data-look] .t-poll b { background: var(--b-light); color: var(--b-dark); }
+/* Broadcast: a red band inside the leading edge of each box. */
+[data-look="broadcast"] :is(.t-scoop, .t-deal, .t-take, .t-situation, .t-caption, .t-poll) b { box-shadow: inset 4px 0 0 var(--b-accent); padding-left: 9px; }
+[data-look="broadcast"] .t-stamp b { border: 0; border-radius: 0; background: var(--b-accent); color: #fff; transform: none; }
+/* Slapshot: everything leans, with the band in goal-light red. */
+[data-look="slapshot"] .thumb:is(.t-scoop, .t-score, .t-stat, .t-deal, .t-breaking, .t-caption, .t-take, .t-situation, .t-player, .t-poll, .t-lower, .t-credit) > * { transform: skewX(-11deg); }
+[data-look="slapshot"] :is(.t-scoop, .t-deal, .t-take, .t-situation, .t-caption) b { box-shadow: inset 4px 0 0 var(--b-extra); padding-left: 9px; }
+[data-look="slapshot"] :is(.t-take, .t-scoop) b em, [data-look="slapshot"] .t-caption b em, [data-look="slapshot"] .t-poll b { background: var(--b-accent); color: var(--b-dark); }
+[data-look="slapshot"] .t-stamp b { border: 2px solid #fff; border-radius: 3px; background: var(--b-extra); color: #fff; }
+/* Ice: light rounded panels in sentence case. */
+[data-look="ice"] :is(.t-scoop, .t-score, .t-stat, .t-deal, .t-take, .t-situation, .t-caption, .t-player, .t-lower, .t-credit) :is(b, small) { background: var(--b-light); color: var(--b-dark); border-radius: 3px; }
+[data-look="ice"] :is(.t-scoop, .t-take, .t-caption, .t-deal) b { text-transform: none; font-family: var(--b-head), sans-serif; font-weight: 800; }
+[data-look="ice"] :is(.t-take, .t-scoop, .t-caption) b em { background: none; color: var(--b-accent); }
+[data-look="ice"] .t-scoop b, [data-look="ice"] .t-deal b { box-shadow: inset 0 3px 0 var(--b-accent); }
+[data-look="ice"] .t-stamp b { background: var(--b-light); color: var(--b-accent); border-color: var(--b-accent); transform: none; }
+[data-look="ice"] .t-stat small, [data-look="ice"] .t-deal small { color: var(--b-accent); }
+[data-look="ice"] .t-lower b, [data-look="ice"] .t-player b { background: var(--b-light); color: var(--b-dark); }
+
+/* The look picker in Chyron Sports' brand kit. */
+.look-pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+.look-pick button { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 8px; text-align: left; }
+.look-pick button[aria-pressed="true"] { border-color: var(--signal); box-shadow: 0 0 0 1px var(--signal); }
+.look-pick b { padding: 2px 8px; font-size: 16px; font-weight: 800; }
+.look-broadcast b { border-left: 4px solid; }
+.look-slapshot b { border-left: 4px solid; font-style: italic; transform: skewX(-11deg); }
+.look-ice b { border-top: 3px solid; border-radius: 4px; }
+.look-pick span { font-size: 13px; font-weight: 700; }
+.look-pick small { font-size: 11px; color: var(--muted); line-height: 1.3; }
 
 /* Templates: one tap swaps in a set of graphics for a kind of video. */
 .templates { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-bottom: 8px; }
