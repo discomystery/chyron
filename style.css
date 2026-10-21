@@ -252,14 +252,21 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
 [data-look="ice"] .t-stat small, [data-look="ice"] .t-deal small { color: var(--b-accent); }
 [data-look="ice"] .t-lower b, [data-look="ice"] .t-player b { background: var(--b-light); color: var(--b-dark); }
 
+[data-look="jumbotron"] .thumb > * { text-shadow: 0 0 5px currentColor; }
+[data-look="jumbotron"] :is(.t-caption, .t-poll) b { background: var(--b-dark); color: var(--b-light); }
+[data-look="jumbotron"] :is(.t-take, .t-scoop, .t-caption) b em { background: none; color: var(--b-accent); }
+[data-look="jumbotron"] .t-stamp b { border: 0; border-radius: 0; background: var(--b-dark); color: var(--b-extra); transform: none; }
+[data-look="jumbotron"] .t-poll b { background: var(--b-accent); color: var(--b-dark); text-shadow: none; }
+
 /* The look picker in Chyron Sports' brand kit. */
-.look-pick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
+.look-pick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 6px; }
 .look-pick button { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 8px; text-align: left; }
 .look-pick button[aria-pressed="true"] { border-color: var(--signal); box-shadow: 0 0 0 1px var(--signal); }
 .look-pick b { padding: 2px 8px; font-size: 16px; font-weight: 800; }
 .look-broadcast b { border-left: 4px solid; }
 .look-slapshot b { border-left: 4px solid; font-style: italic; transform: skewX(-11deg); }
 .look-ice b { border-top: 3px solid; border-radius: 4px; }
+.look-jumbotron b { background-image: radial-gradient(rgba(255,255,255,.1) 30%, transparent 32%) !important; background-size: 4px 4px; text-shadow: 0 0 6px currentColor; }
 .look-pick span { font-size: 13px; font-weight: 700; }
 .look-pick small { font-size: 11px; color: var(--muted); line-height: 1.3; }
 

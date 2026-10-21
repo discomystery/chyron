@@ -18,7 +18,7 @@ const FONTS = [
   { name: 'Inter Tight', weight: 800 },
   { name: 'Space Mono', weight: 700 },
   // Chyron Sports' own typefaces.
-  ...(SPORTS ? [{ name: 'Big Shoulders Display', weight: 900 }, { name: 'Saira Condensed', weight: 700 }] : []),
+  ...(SPORTS ? [{ name: 'Big Shoulders Display', weight: 900 }, { name: 'Saira Condensed', weight: 700 }, { name: 'Doto', weight: 900 }] : []),
 ];
 // Chyron Sports looks. Each is a whole visual system: the brand's colors and typefaces, and how each sports
 // graphic is drawn. Accents always belong to a box (an edge band, a tag, a strip), so nothing floats loose.
@@ -82,6 +82,28 @@ const LOOKS = {
       player: { look: 'classic' },
       host: { look: 'classic' },
       quote: { look: 'classic', radius: 0.1 },
+    },
+  },
+  // The arena scoreboard: black LED panels with lit, glowing type. Dot-matrix type is kept for numbers and
+  // short calls, where it reads instantly; anything you have to read in a sentence is set in a plain face.
+  jumbotron: {
+    name: 'Jumbotron', hint: 'Arena LED board, lit type on black',
+    brand: { dark: '#050505', light: '#ffffff', main: '#ffb000', accent: '#ffb000', extra: '#ff2d2d', head: 'Saira Condensed', body: 'Saira Condensed' },
+    all: { slant: 0, sheen: false, radius: 0, bgAlpha: 1, edge: '', led: true, glow: true, upper: true, hl: 'color', color: '$light', bg: '$dark', accent: '$accent' },
+    kinds: {
+      score: { font: 'Doto' },
+      stat: { font: 'Doto' },
+      stamp: { font: 'Doto', tilt: 0, ring: false, color: '$extra', bg: '$dark' },
+      breaking: { font: 'Doto', color: '$extra' },
+      status: { font: 'Doto', color: '$accent' },
+      situation: { color: '$accent' },
+      scoop: { edge: 'top', edgeColor: '$extra', accent: '$extra' },
+      deal: { edge: 'top', edgeColor: '$accent' },
+      poll: { color: '$dark', bg: '$accent', led: false, glow: false },
+      via: { led: false, glow: false, bgAlpha: 0.75 },
+      player: { look: 'classic' },
+      host: { look: 'classic', accent: '$accent' },
+      quote: { look: 'classic' },
     },
   },
 };
@@ -914,6 +936,11 @@ function fillBox(o, x, y, w, h, r) {
     ctx.fillStyle = g;
     ctx.fill();
   }
+  // LED: the panel is a grid of unlit bulbs. They're faint, so the lit type in front stays sharp.
+  if (o.led) {
+    ctx.fillStyle = ledDots(Math.max(3, Math.round((7 * Math.min(canvas.width, canvas.height)) / 1080)));
+    ctx.fill();
+  }
   ctx.globalAlpha = a;
   // Edge: a band of color along the box's leading side or its top, inside the box so it moves with it.
   if (o.edge === 'left' || o.edge === 'top') {
@@ -925,6 +952,20 @@ function fillBox(o, x, y, w, h, r) {
     else ctx.fillRect(x, y, band, h);
     ctx.restore();
   }
+}
+
+const ledCache = new Map();
+function ledDots(pitch) {
+  if (!ledCache.has(pitch)) {
+    const c = Object.assign(document.createElement('canvas'), { width: pitch, height: pitch });
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgba(255,255,255,0.09)';
+    g.beginPath();
+    g.arc(pitch / 2, pitch / 2, pitch * 0.3, 0, Math.PI * 2);
+    g.fill();
+    ledCache.set(pitch, ctx.createPattern(c, 'repeat'));
+  }
+  return ledCache.get(pitch);
 }
 
 function readable(hex) {
@@ -1653,7 +1694,19 @@ function drawFrame(t, animate, paintBackground) {
       if (L.handles && L.handles.has(type)) fx = fx || { type, p, out };
       else applyEffect(type, p, L, u, out);
     }
-    L.paint(fx);
+    // Glow: lit letters bleed a little light in their own color. Only the letters glow, never the boxes.
+    if (o.glow) {
+      const fillText = ctx.fillText;
+      ctx.fillText = function (...args) {
+        this.save();
+        this.shadowColor = this.fillStyle;
+        this.shadowBlur = 12 * u;
+        fillText.apply(this, args);
+        this.restore();
+      };
+      L.paint(fx);
+      delete ctx.fillText;
+    } else L.paint(fx);
     ctx.restore();
   }
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
@@ -2442,7 +2495,8 @@ function renderLookPick() {
     b.className = `look-${key}`;
     b.setAttribute('aria-pressed', state.brand.look === key);
     const swatch = Object.assign(document.createElement('b'), { textContent: key === 'ice' ? 'Goal' : 'GOAL' });
-    Object.assign(swatch.style, { fontFamily: `"${look.brand.head}"`, background: key === 'ice' ? look.brand.light : look.brand.dark, color: key === 'ice' ? look.brand.dark : look.brand.light, borderColor: look.brand.extra });
+    const ink = key === 'ice' ? look.brand.dark : key === 'jumbotron' ? look.brand.accent : look.brand.light;
+    Object.assign(swatch.style, { fontFamily: `"${look.kinds.stamp.font || look.brand.head}"`, background: key === 'ice' ? look.brand.light : look.brand.dark, color: ink, borderColor: look.brand.extra });
     b.append(swatch, Object.assign(document.createElement('span'), { textContent: look.name }), Object.assign(document.createElement('small'), { textContent: look.hint }));
     b.onclick = () => applyLook(key);
     return b;
