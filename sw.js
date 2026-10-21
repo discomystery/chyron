@@ -2,7 +2,7 @@
 // App files: try the network first so updates arrive, fall back to the saved copy.
 // Fonts and the speech engine's files: use the saved copy first, since they never change.
 // (The speech model itself is kept by transformers.js in its own cache.)
-const CACHE = 'chyron-v3';
+const CACHE = 'chyron-v4';
 const APP_FILES = [
   './',
   'index.html',
@@ -14,6 +14,11 @@ const APP_FILES = [
   'manifest.webmanifest',
   'icons/icon-192.png',
   'icons/icon-512.png',
+  // Chyron Sports, the same app with sports graphics.
+  'sports.html',
+  'sports.webmanifest',
+  'icons/sports-192.png',
+  'icons/sports-512.png',
 ];
 
 self.addEventListener('install', (event) => {

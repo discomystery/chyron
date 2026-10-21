@@ -189,6 +189,47 @@ aside h2, .card h2, dialog h2 { margin: 0 0 12px; font-size: 18px; font-weight: 
 .t-cover b { height: 70%; background: linear-gradient(rgba(17, 17, 17, 0), #111 75%); }
 .t-text b { color: #fff; font: 800 13px var(--b-head), sans-serif; text-shadow: 0 1px 4px #000; }
 
+/* Chyron Sports previews */
+.bar h1 span em { font-style: normal; color: var(--signal); }
+.bar h1 span:has(em) { white-space: nowrap; }
+.t-scoop { align-items: stretch; gap: 3px; }
+.t-scoop i, .t-deal i { align-self: flex-start; padding: 2px 5px; background: var(--b-extra); color: #fff; font: 700 8px var(--b-body), sans-serif; text-transform: uppercase; letter-spacing: 0.04em; }
+.t-scoop i em { display: inline-block; width: 5px; height: 5px; margin-right: 3px; border-radius: 50%; background: #fff; vertical-align: 1px; }
+.t-scoop b { padding: 3px 5px; background: var(--b-dark); color: var(--b-light); font: 400 11px var(--b-head), sans-serif; text-transform: uppercase; }
+.t-scoop b em { padding: 0 2px; background: var(--b-extra); color: #fff; }
+.t-score b { display: flex; align-items: center; gap: 4px; padding-right: 0; background: var(--b-dark); color: var(--b-light); font: 400 11px/22px var(--b-head), sans-serif; }
+.t-score b i { width: 3px; height: 22px; background: #552583; }
+.t-score b i.t2 { margin-left: 3px; background: #007a33; }
+.t-score b em { padding: 0 5px; margin-left: 4px; background: var(--b-accent); color: var(--b-dark); font: 700 9px/22px var(--b-body), sans-serif; }
+.t-stat { flex-direction: row; align-items: center; justify-content: center; gap: 0; }
+.t-stat b { display: flex; flex-direction: column; align-items: center; padding: 3px 7px; background: var(--b-dark); color: var(--b-light); font: 400 17px var(--b-head), sans-serif; }
+.t-stat small { margin-top: 2px; color: var(--b-accent); font: 700 7px var(--b-body), sans-serif; }
+.t-deal { align-items: stretch; gap: 0; }
+.t-deal i { margin-bottom: 2px; background: var(--b-accent); color: var(--b-dark); }
+.t-deal b { padding: 2px 5px 0; background: var(--b-dark); color: var(--b-light); font: 400 12px var(--b-head), sans-serif; text-transform: uppercase; }
+.t-deal small { padding: 1px 5px 3px; background: var(--b-dark); color: var(--b-light); font: 700 8px var(--b-body), sans-serif; text-transform: uppercase; opacity: 0.85; }
+.t-stamp { align-items: center; }
+.t-stamp b { padding: 3px 7px; border: 2px solid var(--b-accent); border-radius: 4px; color: var(--b-accent); font: 400 13px var(--b-head), sans-serif; text-transform: uppercase; transform: rotate(-6deg); }
+.t-breaking b { padding: 3px 6px; background: var(--b-extra); color: #fff; font: 400 12px var(--b-head), sans-serif; text-transform: uppercase; letter-spacing: 0.03em; }
+.t-caption { align-items: center; justify-content: flex-start; padding-top: 8px; }
+.t-caption b { padding: 3px 7px; border-radius: 5px; background: #fff; color: #111; font: 800 11px "Inter Tight", sans-serif; }
+.t-caption b em { color: var(--b-extra); }
+.t-take { align-items: center; }
+.t-take b { padding: 2px 5px; background: var(--b-dark); color: var(--b-light); font: 400 12px var(--b-head), sans-serif; text-transform: uppercase; }
+.t-take b em { padding: 0 2px; background: var(--b-accent); color: var(--b-dark); }
+.t-situation b { padding: 3px 6px; background: var(--b-dark); color: var(--b-light); font: 700 9px var(--b-body), sans-serif; text-transform: uppercase; letter-spacing: 0.04em; }
+.t-situation b em { display: inline-block; width: 5px; height: 5px; margin-right: 4px; border-radius: 50%; background: var(--b-extra); vertical-align: 1px; }
+.t-player b { padding: 2px 5px; border-left: 3px solid var(--b-accent); background: var(--b-dark); color: var(--b-light); font: 400 12px var(--b-head), sans-serif; text-transform: uppercase; }
+.t-player i { padding: 2px 5px; margin-left: 3px; background: var(--b-accent); color: var(--b-dark); font: 700 8px var(--b-body), sans-serif; text-transform: uppercase; }
+.t-poll { align-items: center; justify-content: flex-end; padding-bottom: 7px; }
+.t-poll b { padding: 3px 6px; background: var(--b-accent); color: var(--b-dark); font: 400 11px var(--b-head), sans-serif; text-transform: uppercase; }
+
+/* Templates: one tap swaps in a set of graphics for a kind of video. */
+.templates { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin-bottom: 8px; }
+.tpl { display: block; width: 100%; padding: 8px 10px; text-align: left; }
+.tpl b { display: block; font-size: 13px; }
+.tpl span { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--muted); }
+
 .tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 14px; }
 .tile { flex-direction: column; gap: 5px; padding: 10px 0 8px; font-size: 12px; }
 .tile .ic { width: 20px; height: 20px; color: var(--signal); }
@@ -728,7 +769,7 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
   }
   body.sheet-add .add { transform: none; }
   .sheet-close { display: inline-flex; float: right; margin: -4px -2px 0 0; }
-  .add button[data-add] { display: none; } /* already on the rail */
+  .add button[data-add]:not(.keep) { display: none; } /* already on the rail */
 
   /* The editing panel: one group of settings at a time, picked from the tab strip under it. */
   .inspector { grid-area: panel; display: flex; flex-direction: column; max-height: 42dvh; padding: 0; overflow: hidden; border: 0; border-top: 1px solid var(--line); }

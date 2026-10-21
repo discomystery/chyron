@@ -5,6 +5,9 @@ const bgCanvas = document.createElement('canvas');
 const bgCtx = bgCanvas.getContext('2d');
 const MB = window.Mediabunny;
 
+// Chyron Sports (sports.html) is this same app with sports graphics, templates and brand, and its own saved work.
+const SPORTS = document.documentElement.dataset.edition === 'sports';
+const APP_NAME = SPORTS ? 'Chyron Sports' : 'Chyron';
 const FORMATS = { '9:16': [1080, 1920], '4:5': [1080, 1350], '1:1': [1080, 1080], '16:9': [1920, 1080] };
 const FONTS = [
   { name: 'Anton', weight: 400 },
@@ -15,7 +18,9 @@ const FONTS = [
   { name: 'Inter Tight', weight: 800 },
   { name: 'Space Mono', weight: 700 },
 ];
-const DEFAULT_BRAND = { dark: '#111111', light: '#ffffff', main: '#1740e0', accent: '#ffd400', extra: '#e4262c', head: 'Inter Tight', body: 'Space Mono', logo: null, v: 2 };
+const DEFAULT_BRAND = SPORTS
+  ? { dark: '#0b0b0d', light: '#ffffff', main: '#1f5bff', accent: '#ffd60a', extra: '#e10b1f', head: 'Anton', body: 'Barlow Condensed', logo: null, v: 2 }
+  : { dark: '#111111', light: '#ffffff', main: '#1740e0', accent: '#ffd400', extra: '#e4262c', head: 'Inter Tight', body: 'Space Mono', logo: null, v: 2 };
 // Values starting with $ are filled in from the brand kit when a graphic is made.
 const BASE = {
   text: '', sub: '', width: 0.84, x: 0.08, y: 0.5, size: 56, align: 'left', upper: false, track: 0,
@@ -35,6 +40,22 @@ const PRESETS = {
   logo: { name: 'Logo', kind: 'image', width: 0.2, x: 0.74, y: 0.04, anim: 'none', out: 'none' },
   // Covers hide part of the video, such as another channel's captions.
   cover: { name: 'Cover', kind: 'solid', width: 1, x: 0, y: 0.72, h: 0.28, bg: '$dark', edges: 'top', feather: 0.55, blur: 0.5 },
+
+  // Sports graphics, offered in Chyron Sports. Both apps can show them, so project files open in either.
+  score: { name: 'Score bug', kind: 'score', text: 'LAL 102\nBOS 99', sub: 'Q4 · 2:13', font: '$head', subFont: '$body', size: 50, y: 0.05, upper: true, team1: '#552583', team2: '#007a33', color: '$light', bg: '$dark', accent: '$accent', anim: 'wipe' },
+  stat: { name: 'Stat card', kind: 'stat', text: '50 PTS\n12 REB\n9 AST', sub: 'Career high', font: '$head', subFont: '$body', size: 120, y: 0.6, align: 'center', upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
+  scoop: { name: 'Scoop card', kind: 'scoop', tag: 'Breaking', text: 'Kevin Durant is being traded to the *Rockets*', sub: 'per @ShamsCharania', font: '$head', subFont: '$body', size: 70, y: 0.07, upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$extra', anim: 'rise' },
+  deal: { name: 'Trade card', kind: 'deal', tag: 'Here we go', text: 'Kylian Mbappé', sub: 'PSG > Real Madrid', note: 'Free transfer · Five-year deal', font: '$head', subFont: '$body', size: 84, y: 0.6, upper: true, hl: 'color', color: '$light', bg: '$dark', accent: '$accent', anim: 'pop' },
+  stamp: { name: 'Stamp', kind: 'stamp', text: 'Here we go', font: '$head', size: 92, x: 0.1, width: 0.8, y: 0.3, align: 'center', upper: true, tilt: -6, color: '$accent', bg: '$dark', bgAlpha: 0.75, radius: 0.3, anim: 'pop' },
+  breaking: { name: 'Breaking tag', kind: 'lines', text: 'Breaking', font: '$head', size: 44, y: 0.1, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
+  caption: { name: 'Top caption', kind: 'lines', text: 'He really did *that* in the Finals', font: 'Inter Tight', size: 52, x: 0.06, width: 0.88, y: 0.17, align: 'center', color: '#111111', bg: '#ffffff', accent: '$extra', radius: 0.35, anim: 'pop' },
+  take: { name: 'Hot take', kind: 'lines', text: 'LeBron is *not* a top-five player', font: '$head', size: 78, y: 0.08, align: 'center', upper: true, hl: 'box', color: '$light', bg: '$dark', accent: '$accent', anim: 'marker' },
+  situation: { name: 'Game situation', kind: 'lines', text: 'Q4 · 0:03 · Down 2', size: 36, y: 0.69, upper: true, track: 0.04, dot: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'type' },
+  status: { name: 'Status tag', kind: 'lines', text: 'Out · Hamstring', font: '$head', size: 40, y: 0.2, upper: true, track: 0.03, color: '$light', bg: '$extra', accent: '$accent', anim: 'wipe' },
+  player: { name: 'Player name bar', kind: 'lower', text: '#23 LeBron James', sub: 'Lakers · Forward', font: '$head', subFont: '$body', size: 58, y: 0.76, upper: true, color: '$light', bg: '$dark', accent: '$accent', anim: 'slide' },
+  host: { name: 'Show name bar', kind: 'lower', look: 'marker', text: 'Stephen A. Smith', sub: 'First Take', font: '$head', subFont: '$body', size: 54, y: 0.74, upper: true, color: '$dark', bg: '$accent', accent: '$dark', anim: 'marker' },
+  poll: { name: 'Poll prompt', kind: 'lines', text: 'Agree or disagree?', font: '$head', size: 50, y: 0.86, align: 'center', upper: true, color: '$dark', bg: '$accent', accent: '$extra', anim: 'pop' },
+  via: { name: 'Clip credit', kind: 'lines', text: 'via @NBA', size: 30, y: 0.93, bgAlpha: 0.7, anim: 'fade' },
 };
 const COVERS = new Set(['solid', 'gradient', 'blur']);
 const COVER_NAMES = { solid: 'Solid cover', blur: 'Blur' };
@@ -92,7 +113,7 @@ function fmt(t) {
 /* ---------- graphics: creating ---------- */
 
 function resolveBrand(o) {
-  for (const k of ['font', 'subFont', 'color', 'bg', 'accent']) {
+  for (const k of ['font', 'subFont', 'color', 'bg', 'accent', 'team1', 'team2']) {
     if (typeof o[k] === 'string' && o[k][0] === '$') o[k] = state.brand[o[k].slice(1)];
   }
   return o;
@@ -204,7 +225,7 @@ async function addSubtitleFile(file) {
 /* ---------- saving, undo, project files ---------- */
 
 const db = new Promise((resolve, reject) => {
-  const req = indexedDB.open('chyron', 1);
+  const req = indexedDB.open(SPORTS ? 'chyron-sports' : 'chyron', 1);
   req.onupgradeneeded = () => req.result.createObjectStore('kv');
   req.onsuccess = () => resolve(req.result);
   req.onerror = () => reject(req.error);
@@ -293,12 +314,13 @@ async function load() {
   try {
     saved = JSON.parse(await idb('readonly', (s) => s.get('state')));
   } catch {}
-  if (!saved) {
+  if (!saved && !SPORTS) {
     try {
       saved = JSON.parse(localStorage.getItem('chyron.v1')); // first version stored graphics here
     } catch {}
   }
   if (saved && Array.isArray(saved.overlays)) normalise(saved);
+  else if (SPORTS) state.overlays = templateGraphics(TEMPLATES[0]);
   else {
     state.overlays = [
       makeOverlay('label'),
@@ -985,6 +1007,284 @@ const LAYOUTS = {
     };
   },
 
+  // A score bug: a color chip, name and score for each team (one per line), then the game's status on the accent.
+  score(o, text, bx, by, bw, u) {
+    const teams = text.replace(/\*/g, '').split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+      const m = l.match(/^(.*\S)\s+(\S+)$/);
+      return m ? { name: m[1], pts: m[2] } : { name: l, pts: '' };
+    });
+    const status = o.upper ? o.sub.toUpperCase() : o.sub;
+    const measure = (fs) => {
+      const pad = fs * 0.36, chip = fs * 0.2, gap = fs * 0.42, subFs = fs * 0.62;
+      setFont(o, fs);
+      const cells = teams.map((t) => {
+        const nw = ctx.measureText(t.name).width, pw = t.pts ? ctx.measureText(t.pts).width : 0;
+        return { ...t, nw, w: chip + pad + nw + (t.pts ? gap + pw : 0) + pad };
+      });
+      setFont(subFontOf(o), subFs);
+      const sw = status ? ctx.measureText(status).width + 2 * pad : 0;
+      return { fs, pad, chip, gap, subFs, cells, sw, w: cells.reduce((a, c) => a + c.w, 0) + sw };
+    };
+    let m = measure(o.size * u);
+    if (m.w > bw) m = measure((o.size * u * bw) / m.w);
+    const h = m.fs * 1.5, x0 = alignX(o, bx, bw, m.w);
+    return {
+      x: bx, y: by, w: bw, h, ix: x0, iw: m.w,
+      paint() {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(x0, by, m.w, h, (o.radius * h) / 2);
+        ctx.clip();
+        fillBox(o, x0, by, m.w, h, 0);
+        setFont(o, m.fs);
+        const at = by + (h + capHeight()) / 2;
+        let x = x0;
+        m.cells.forEach((c, i) => {
+          ctx.fillStyle = (i % 2 ? o.team2 : o.team1) || o.accent;
+          ctx.fillRect(x, by, m.chip, h);
+          ctx.fillStyle = o.color;
+          ctx.fillText(c.name, x + m.chip + m.pad, at);
+          if (c.pts) ctx.fillText(c.pts, x + m.chip + m.pad + c.nw + m.gap, at);
+          x += c.w;
+        });
+        if (status) {
+          ctx.fillStyle = o.accent;
+          ctx.fillRect(x, by, m.sw, h);
+          setFont(subFontOf(o), m.subFs);
+          ctx.fillStyle = readable(o.accent);
+          ctx.fillText(status, x + m.pad, by + (h + capHeight()) / 2);
+        }
+        ctx.restore();
+      },
+    };
+  },
+
+  // Big numbers side by side, each with its label under it ("50 PTS" on a line), and a context line above.
+  stat(o, text, bx, by, bw, u) {
+    const up = (s) => (o.upper ? s.toUpperCase() : s);
+    const stats = text.replace(/\*/g, '').split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
+      const m = l.match(/^([-+]?[$£€]?[\d.,:/]+[%KMB+]?)\s+(.*)$/i);
+      return m ? { val: m[1], lab: m[2] } : { val: l, lab: '' };
+    });
+    const note = up(o.sub);
+    const measure = (fs) => {
+      const labFs = fs * 0.26, gap = fs * 0.5, pad = fs * 0.34;
+      const cols = stats.map((s) => {
+        setFont(o, fs);
+        const vw = ctx.measureText(s.val).width;
+        setFont(subFontOf(o), labFs);
+        const lw = ctx.measureText(up(s.lab)).width;
+        return { ...s, vw, lw, w: Math.max(vw, lw) };
+      });
+      setFont(subFontOf(o), labFs * 1.1);
+      const nw = note ? ctx.measureText(note).width + 2 * pad : 0;
+      const inner = cols.reduce((a, c) => a + c.w, 0) + gap * Math.max(0, cols.length - 1);
+      return { fs, labFs, gap, pad, cols, inner, w: Math.max(inner + 2 * pad, nw) };
+    };
+    let m = measure(o.size * u);
+    if (m.w > bw) m = measure((o.size * u * bw) / m.w);
+    setFont(o, m.fs);
+    const cap = capHeight();
+    const noteH = note ? m.labFs * 2.3 : 0, labH = stats.some((s) => s.lab) ? m.labFs * 2 : 0;
+    const h = noteH + m.pad * 1.1 + cap + labH + m.pad;
+    const x0 = alignX(o, bx, bw, m.w);
+    return {
+      x: bx, y: by, w: bw, h, ix: x0, iw: m.w,
+      paint() {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(x0, by, m.w, h, o.radius * m.fs * 0.3);
+        ctx.clip();
+        fillBox(o, x0, by, m.w, h, 0);
+        if (note) {
+          ctx.fillStyle = o.accent;
+          ctx.fillRect(x0, by, m.w, noteH);
+          setFont(subFontOf(o), m.labFs * 1.1);
+          ctx.fillStyle = readable(o.accent);
+          ctx.fillText(note, x0 + (m.w - ctx.measureText(note).width) / 2, by + (noteH + capHeight()) / 2);
+        }
+        ctx.restore();
+        const top = by + noteH + m.pad * 1.1;
+        let x = x0 + (m.w - m.inner) / 2;
+        m.cols.forEach((c, i) => {
+          if (i) {
+            ctx.fillStyle = o.color;
+            ctx.globalAlpha *= 0.25;
+            ctx.fillRect(x - m.gap / 2 - 1, top, 2, cap + labH * 0.8);
+            ctx.globalAlpha /= 0.25;
+          }
+          setFont(o, m.fs);
+          ctx.fillStyle = o.color;
+          ctx.fillText(c.val, x + (c.w - c.vw) / 2, top + cap);
+          if (c.lab) {
+            setFont(subFontOf(o), m.labFs);
+            ctx.fillStyle = o.accent;
+            ctx.fillText(up(c.lab), x + (c.w - c.lw) / 2, top + cap + m.labFs * 1.6);
+          }
+          x += c.w + m.gap;
+        });
+      },
+    };
+  },
+
+  // A breaking-news card: a tag with a live dot, the headline, and who reported it.
+  scoop(o, text, bx, by, bw, u) {
+    const fs = o.size * u, pad = fs * 0.42, lh = fs * 1.14, tagFs = fs * 0.4, subFs = fs * 0.4;
+    const tag = (o.tag || '').trim().toUpperCase();
+    const sub = o.upper ? o.sub.toUpperCase() : o.sub;
+    const inner = bw - 2 * pad;
+    setFont(o, fs);
+    const cap = capHeight();
+    const rows = wrapRich(text, inner);
+    setFont(subFontOf(o), tagFs);
+    const tagCap = capHeight(), dot = tagFs * 0.32;
+    const tagW = tag ? ctx.measureText(tag).width + tagFs * 0.7 + dot * 2 + tagFs * 0.45 : 0, tagH = tag ? tagFs * 1.8 : 0;
+    const top = pad + (tag ? tagH + pad * 0.55 : 0);
+    const subH = sub ? subFs * 1.9 : 0;
+    const h = top + rows.length * lh + subH + pad * 0.8;
+    return {
+      x: bx, y: by, w: bw, h, ix: bx, iw: bw,
+      paint() {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, h, o.radius * fs * 0.6);
+        ctx.clip();
+        fillBox(o, bx, by, bw, h, 0);
+        ctx.restore();
+        if (tag) {
+          const tx = alignX(o, bx + pad, inner, tagW), ty = by + pad;
+          ctx.fillStyle = o.accent;
+          ctx.fillRect(tx, ty, tagW, tagH);
+          ctx.fillStyle = readable(o.accent);
+          ctx.beginPath();
+          ctx.arc(tx + tagFs * 0.35 + dot, ty + tagH / 2, dot, 0, Math.PI * 2);
+          ctx.fill();
+          setFont(subFontOf(o), tagFs);
+          ctx.fillText(tag, tx + tagFs * 0.35 + dot * 2 + tagFs * 0.3, ty + (tagH + tagCap) / 2);
+        }
+        setFont(o, fs);
+        rows.forEach((row, i) => {
+          const y = by + top + i * lh;
+          paintRow(row, alignX(o, bx + pad, inner, row.w), y + (lh + cap) / 2, o, y, lh);
+        });
+        if (!sub) return;
+        setFont(subFontOf(o), subFs);
+        ctx.fillStyle = o.color;
+        ctx.globalAlpha *= 0.75;
+        ctx.fillText(sub, alignX(o, bx + pad, inner, ctx.measureText(sub).width), by + h - pad * 0.8 - subFs * 0.45);
+      },
+    };
+  },
+
+  // A trade or transfer: a tag, the player, where they're going from and to ("PSG > Real Madrid"), and the terms.
+  deal(o, text, bx, by, bw, u) {
+    const up = (s) => (o.upper ? s.toUpperCase() : s);
+    const fs = o.size * u, pad = fs * 0.4, lh = fs * 1.08, tagFs = fs * 0.36, subFs = fs * 0.46, noteFs = fs * 0.32;
+    const tag = (o.tag || '').trim().toUpperCase();
+    const [from, to] = up(o.sub).split(/\s*(?:->|→|>)\s*/);
+    const note = up(o.note || '');
+    const inner = bw - 2 * pad;
+    setFont(o, fs);
+    const cap = capHeight();
+    const rows = wrapRich(text, inner);
+    setFont(subFontOf(o), subFs);
+    const arrow = subFs * 1.7, fromW = from ? ctx.measureText(from).width : 0, toW = to ? ctx.measureText(to).width : 0;
+    const teamsW = fromW + (to ? arrow + toW : 0);
+    setFont(subFontOf(o), tagFs);
+    const tagW = tag ? ctx.measureText(tag).width + tagFs * 1.1 : 0, tagH = tag ? tagFs * 1.8 : 0;
+    const top = pad + (tag ? tagH + pad * 0.5 : 0);
+    const teamsH = from ? subFs * 1.7 : 0, noteH = note ? noteFs * 1.9 : 0;
+    const h = top + rows.length * lh + teamsH + noteH + pad * 0.8;
+    return {
+      x: bx, y: by, w: bw, h, ix: bx, iw: bw,
+      paint() {
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, h, o.radius * fs * 0.6);
+        ctx.clip();
+        fillBox(o, bx, by, bw, h, 0);
+        ctx.fillStyle = o.accent;
+        ctx.fillRect(bx, by + h - fs * 0.07, bw, fs * 0.07);
+        ctx.restore();
+        if (tag) {
+          const tx = alignX(o, bx + pad, inner, tagW), ty = by + pad;
+          ctx.fillStyle = o.accent;
+          ctx.fillRect(tx, ty, tagW, tagH);
+          setFont(subFontOf(o), tagFs);
+          ctx.fillStyle = readable(o.accent);
+          ctx.fillText(tag, tx + tagFs * 0.55, ty + (tagH + capHeight()) / 2);
+        }
+        setFont(o, fs);
+        rows.forEach((row, i) => {
+          const y = by + top + i * lh;
+          paintRow(row, alignX(o, bx + pad, inner, row.w), y + (lh + cap) / 2, o, y, lh);
+        });
+        let y = by + top + rows.length * lh;
+        setFont(subFontOf(o), subFs);
+        if (from) {
+          const at = y + subFs * 1.15;
+          let x = alignX(o, bx + pad, inner, teamsW);
+          ctx.fillStyle = o.color;
+          ctx.globalAlpha *= 0.7;
+          ctx.fillText(from, x, at);
+          ctx.globalAlpha /= 0.7;
+          if (to) {
+            x += fromW;
+            const mid = at - capHeight() / 2, a0 = x + subFs * 0.35, a1 = x + arrow - subFs * 0.35;
+            ctx.fillStyle = o.accent;
+            ctx.fillRect(a0, mid - subFs * 0.05, a1 - a0 - subFs * 0.2, subFs * 0.1);
+            ctx.beginPath();
+            ctx.moveTo(a1, mid);
+            ctx.lineTo(a1 - subFs * 0.32, mid - subFs * 0.24);
+            ctx.lineTo(a1 - subFs * 0.32, mid + subFs * 0.24);
+            ctx.fill();
+            ctx.fillStyle = o.color;
+            ctx.fillText(to, x + arrow, at);
+          }
+          y += teamsH;
+        }
+        if (!note) return;
+        setFont(subFontOf(o), noteFs);
+        ctx.fillStyle = o.accent;
+        ctx.fillText(note, alignX(o, bx + pad, inner, ctx.measureText(note).width), y + noteFs * 1.25);
+      },
+    };
+  },
+
+  // A tilted rubber stamp, like HERE WE GO or FINAL.
+  stamp(o, text, bx, by, bw, u) {
+    text = text.replace(/\*/g, '');
+    let fs = o.size * u;
+    setFont(o, fs);
+    const fit = ctx.measureText(text).width + fs * 0.76;
+    if (fit > bw) fs *= bw / fit;
+    setFont(o, fs);
+    const tw = ctx.measureText(text).width - (o.track || 0) * fs, padX = fs * 0.38;
+    const w = tw + 2 * padX, h = fs * 1.42, x = alignX(o, bx, bw, w), cap = capHeight();
+    return {
+      x: bx, y: by, w: bw, h, ix: x, iw: w,
+      paint() {
+        const cx = x + w / 2, cy = by + h / 2, r = (o.radius * h) / 2, line = fs * 0.07;
+        ctx.translate(cx, cy);
+        ctx.rotate(((o.tilt || 0) * Math.PI) / 180);
+        ctx.translate(-cx, -cy);
+        fillBox(o, x, by, w, h, r);
+        ctx.strokeStyle = o.color;
+        ctx.lineWidth = line;
+        ctx.beginPath();
+        ctx.roundRect(x + line / 2, by + line / 2, w - line, h - line, r);
+        ctx.stroke();
+        ctx.lineWidth = line * 0.4;
+        ctx.beginPath();
+        ctx.roundRect(x + line * 2, by + line * 2, w - line * 4, h - line * 4, Math.max(0, r - line * 2));
+        ctx.stroke();
+        setFont(o, fs);
+        ctx.fillStyle = o.color;
+        ctx.fillText(text, x + padX, by + (h + cap) / 2);
+      },
+    };
+  },
+
   solid: coverLayout,
   gradient: coverLayout,
   blur: coverLayout,
@@ -1390,7 +1690,7 @@ function snapDrag(o, ox, oy, box0, lines, pxPerScreen) {
 }
 
 // Puts a graphic in one of nine spots in the safe area. Text lines up with the side it's placed on.
-const ALIGNS = new Set(['lines', 'lower', 'quote', 'text']);
+const ALIGNS = new Set(['lines', 'lower', 'quote', 'text', 'score', 'stat', 'scoop', 'deal', 'stamp']);
 function placeAt(o, row, col) {
   if (!o) return;
   const a = safeArea(o), w = Math.min(o.width, a.r - a.l);
@@ -1598,6 +1898,10 @@ $('#resetFrame').onclick = () => {
 /* ---------- inspector ---------- */
 
 const props = $('#props');
+// What the text fields mean for each kind of graphic.
+const TEXT_LABELS = { score: 'Teams and scores, one per line', stat: 'Stats, one per line', deal: 'Player', stamp: 'Stamp' };
+const SUB_LABELS = { quote: 'Who said it', score: 'Game status', stat: 'Context', scoop: 'Reported by', deal: 'From > to' };
+const ACCENT_LABELS = { lower: 'Accent', score: 'Status', stat: 'Accent', scoop: 'Tag', deal: 'Accent' };
 const clipProps = $('#clipProps');
 
 function select(id) {
@@ -1639,13 +1943,13 @@ function fillInspector() {
   syncRails();
   if (!o) return;
   $('#propTitle').textContent = PRESETS[o.type].name;
-  $('#subLabel').textContent = o.kind === 'quote' ? 'Who said it' : 'Title or role';
-  $('#accentLabel').textContent = o.kind === 'lower' ? 'Accent' : 'Highlight';
+  $('#subLabel').textContent = SUB_LABELS[o.kind] || 'Title or role';
+  $('#accentLabel').textContent = ACCENT_LABELS[o.kind] || 'Highlight';
   const subs = o.type === 'subtitles';
   props.querySelectorAll('[data-for]').forEach((el) => (el.hidden = !el.dataset.for.split(' ').includes(o.kind)));
   props.querySelectorAll('[data-subs]').forEach((el) => (el.hidden = (el.dataset.subs === 'only') !== subs));
   const cue = subs ? cueAt(o, T) : null;
-  $('#textLabel').textContent = subs ? 'Subtitle at the playhead' : 'Text';
+  $('#textLabel').textContent = subs ? 'Subtitle at the playhead' : TEXT_LABELS[o.kind] || 'Text';
   props.querySelector('[data-k="text"]').disabled = subs && !cue;
   props.querySelectorAll('[data-k]').forEach((el) => {
     if (el === document.activeElement && el.type !== 'range') return;
@@ -1660,7 +1964,7 @@ function fillInspector() {
   props.querySelector('[data-k="subFont"]').value = subFontName(o);
   if (o.cues) props.querySelector('[data-k="follow"]').value = followsFootage(o) ? 'footage' : 'timeline';
   if (o.cues) props.querySelector('[data-k="karaoke"]').closest('label').hidden = !o.cues.some((c) => c.words);
-  $('#subFontLabel').textContent = o.kind === 'quote' ? 'Attribution typeface' : 'Title typeface';
+  $('#subFontLabel').textContent = o.kind === 'quote' ? 'Attribution typeface' : o.kind === 'lower' ? 'Title typeface' : 'Small text typeface';
   syncChips();
   syncTabs();
   syncColorTarget();
@@ -1993,7 +2297,7 @@ $('#saveLayout').onclick = () => {
 function renderBrand() {
   const b = state.brand;
   const root = document.documentElement.style;
-  for (const k of ['dark', 'light', 'accent']) root.setProperty(`--b-${k}`, b[k]);
+  for (const k of ['dark', 'light', 'main', 'accent', 'extra']) root.setProperty(`--b-${k}`, b[k]);
   root.setProperty('--b-head', `"${b.head}"`);
   root.setProperty('--b-body', `"${b.body}"`);
   document.querySelectorAll('[data-b]').forEach((el) => (el.value = b[el.dataset.b]));
@@ -2043,10 +2347,69 @@ $('#removeLogo').onclick = () => {
   save();
 };
 
+/* ---------- templates (Chyron Sports) ---------- */
+
+// Each template swaps the graphics for a ready-made set for one kind of sports video, placed for 9:16.
+const TEMPLATES = [
+  { name: 'Scoop', hint: 'Breaking news over footage', graphics: [['scoop'], ['via']] },
+  { name: 'Trade or transfer', hint: 'Here we go, from and to', graphics: [['stamp', { y: 0.14 }], ['deal', { tag: 'Transfer' }]] },
+  {
+    name: 'Highlight', hint: 'Clip with a caption above', fit: 'contain',
+    graphics: [['caption', { y: 0.17 }], ['situation', { y: 0.29 }], ['via', { y: 0.675, bgAlpha: 0 }]],
+  },
+  {
+    name: 'Big stat night', hint: 'The numbers over the reel',
+    graphics: [['take', { text: 'Jokić went *off* tonight' }], ['stat', { text: '35 PTS\n18 REB\n12 AST', sub: 'Triple-double' }], ['via']],
+  },
+  {
+    name: 'Final score', hint: 'Score bug and a caption',
+    graphics: [['score', { text: 'BOS 104\nDAL 88', sub: 'Final', size: 64, y: 0.07, align: 'center', team1: '#007a33', team2: '#00538c' }], ['caption', { text: 'The Celtics are *champions*', y: 0.14 }], ['via']],
+  },
+  { name: 'Hot take', hint: 'The take, who said it, a poll', tip: 'Add Captions for word-by-word captions.', graphics: [['take'], ['host'], ['poll']] },
+  {
+    name: 'Press conference', hint: 'Quote and name bar', tip: 'Add Captions to write out what’s said.',
+    graphics: [['quote', { text: 'We just didn’t *compete* tonight.', sub: 'Joe Mazzulla', y: 0.08 }], ['player', { text: 'Joe Mazzulla', sub: 'Celtics · Head coach' }], ['via', { text: 'via @celtics' }]],
+  },
+  {
+    name: 'Reaction', hint: 'Caption and the score',
+    graphics: [['caption', { text: 'His reaction to the *buzzer-beater*', y: 0.07 }], ['score', { y: 0.16, align: 'center', sub: 'Final' }]],
+  },
+];
+
+const templateGraphics = (t) => t.graphics.map(([type, extra]) => makeOverlay(type, extra));
+
+function useTemplate(t) {
+  state.overlays = templateGraphics(t);
+  if (t.fit) $('#fit').value = state.fit = t.fit;
+  select(null);
+  renderTimeline();
+  commit();
+  toast(`${t.name} template applied.${t.tip ? ` ${t.tip}` : ''}`, true);
+}
+
+function renderTemplates() {
+  const box = $('#templates');
+  if (!box) return;
+  box.replaceChildren(...TEMPLATES.map((t) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tpl';
+    b.title = 'Replace the graphics with this template';
+    b.append(Object.assign(document.createElement('b'), { textContent: t.name }), Object.assign(document.createElement('span'), { textContent: t.hint }));
+    b.onclick = () => useTemplate(t);
+    return b;
+  }));
+}
+renderTemplates();
+
 /* ---------- timeline ---------- */
 
 const rowsEl = $('#rows');
-const TYPE_ICONS = { headline: 'headline', label: 'label', lower: 'lower', quote: 'quote', credit: 'credit', text: 'text', image: 'image', logo: 'logo', subtitles: 'subs', cover: 'cover' };
+const TYPE_ICONS = {
+  headline: 'headline', label: 'label', lower: 'lower', quote: 'quote', credit: 'credit', text: 'text', image: 'image', logo: 'logo', subtitles: 'subs', cover: 'cover',
+  score: 'score', stat: 'stat', scoop: 'scoop', deal: 'deal', stamp: 'stamp', breaking: 'label', caption: 'headline', take: 'take',
+  situation: 'label', status: 'label', player: 'lower', host: 'lower', poll: 'quote', via: 'credit',
+};
 const ruler = $('#ruler');
 const pct = (t) => `${(t / duration) * 100}%`;
 
@@ -3733,9 +4096,9 @@ addEventListener('beforeinstallprompt', (e) => {
 function installSteps() {
   const ua = navigator.userAgent;
   if (/iPhone|iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'To install, tap the Share button, then Add to Home Screen.';
-  if (/Firefox/.test(ua)) return 'Firefox can’t install web apps. Open this page in Chrome, Edge or Safari to install Chyron.';
+  if (/Firefox/.test(ua)) return `Firefox can’t install web apps. Open this page in Chrome, Edge or Safari to install ${APP_NAME}.`;
   if (/Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua)) return 'To install, choose File → Add to Dock in Safari’s menu bar.';
-  return 'To install, click the install icon at the right end of the address bar, or open the browser menu and choose Install Chyron.';
+  return `To install, click the install icon at the right end of the address bar, or open the browser menu and choose Install ${APP_NAME}.`;
 }
 $('#install').onclick = async () => {
   if (!installPrompt) return toast(installSteps());
@@ -3746,9 +4109,9 @@ $('#install').onclick = async () => {
 };
 addEventListener('appinstalled', () => {
   $('#install').hidden = true;
-  toast('Chyron is installed. Open it from your Applications folder or Dock.');
+  toast(`${APP_NAME} is installed. Open it from your Applications folder or Dock.`);
 });
-// Once installed, videos and SRT files can be opened with Chyron from Finder.
+// Once installed, videos and SRT files can be opened with the app from Finder.
 if ('launchQueue' in window) {
   launchQueue.setConsumer(async (params) => {
     if (params.files && params.files.length) handleFiles(await Promise.all(params.files.map((h) => h.getFile())));
