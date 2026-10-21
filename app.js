@@ -18,7 +18,7 @@ const FONTS = [
   { name: 'Inter Tight', weight: 800 },
   { name: 'Space Mono', weight: 700 },
   // Chyron Sports' own typefaces.
-  ...(SPORTS ? [{ name: 'Big Shoulders Display', weight: 900 }, { name: 'Saira Condensed', weight: 700 }, { name: 'Doto', weight: 900 }, { name: 'JetBrains Mono', weight: 800 }] : []),
+  ...(SPORTS ? [{ name: 'Big Shoulders Display', weight: 900 }, { name: 'Saira Condensed', weight: 700 }, { name: 'Doto', weight: 900 }, { name: 'JetBrains Mono', weight: 800 }, { name: 'Fraunces', weight: 600 }, { name: 'Hanken Grotesk', weight: 700 }] : []),
 ];
 // Chyron Sports looks. Each is a whole visual system: the brand's colors and typefaces, and how each sports
 // graphic is drawn. Accents always belong to a box (an edge band, a tag, a strip), so nothing floats loose.
@@ -107,6 +107,30 @@ const LOOKS = {
       player: { look: 'classic' },
       host: { look: 'classic', accent: '$accent' },
       quote: { look: 'classic' },
+    },
+  },
+  // Matches the Spare Line Change site: white cards on ice, Fraunces for scores and headlines, small capital
+  // labels in Hanken Grotesk, pill tags, and the site's thick translucent blue underline under headings.
+  spare: {
+    name: 'Spare Line Change', hint: 'The site: white cards on ice, serif scores',
+    brand: { dark: '#0f1c2b', light: '#ffffff', main: '#1f4e9e', accent: '#1f4e9e', extra: '#c8102e', head: 'Fraunces', body: 'Hanken Grotesk' },
+    all: { slant: 0, sheen: false, radius: 0.35, bgAlpha: 1, edge: '', upper: false, track: -0.01, hl: 'color', color: '$dark', bg: '$light', accent: '$accent' },
+    kinds: {
+      score: { radius: 1, track: 0, accent: '$dark' },
+      stat: { radius: 0.4, track: 0, accent: '$dark' },
+      scoop: { edge: 'bottom', edgeColor: '#b7c6e0', radius: 0.12, accent: '$extra' },
+      deal: { edge: 'bottom', edgeColor: '#b7c6e0', radius: 0.12 },
+      caption: { edge: 'bottom', edgeColor: '#b7c6e0', radius: 0.2 },
+      take: { edge: 'bottom', edgeColor: '#b7c6e0', radius: 0.2 },
+      stamp: { tilt: 0, ring: false, radius: 1, color: '$light', bg: '$dark' },
+      breaking: { upper: true, track: 0.06, radius: 1, color: '$light', bg: '$dark' },
+      status: { upper: true, track: 0.06, radius: 1, color: '#48586a', bg: '#e4ebf1' },
+      situation: { upper: true, track: 0.07, radius: 1, dot: false, color: '#48586a', bg: '#e4ebf1' },
+      poll: { radius: 1, color: '$light', bg: '$dark' },
+      via: { radius: 1, color: '#48586a', bg: '#e4ebf1', bgAlpha: 0.95 },
+      player: { look: 'classic', radius: 0.2 },
+      host: { look: 'classic', radius: 0.2 },
+      quote: { look: 'classic', radius: 0.2 },
     },
   },
 };
@@ -949,13 +973,14 @@ function fillBox(o, x, y, w, h, r) {
     ctx.fill();
   }
   ctx.globalAlpha = a;
-  // Edge: a band of color along the box's leading side or its top, inside the box so it moves with it.
-  if (o.edge === 'left' || o.edge === 'top') {
-    const band = Math.min((o.edge === 'top' ? 0.08 : 0.14) * h, (10 * Math.min(canvas.width, canvas.height)) / 1080);
+  // Edge: a band of color along the box's leading side, top or bottom, inside the box so it moves with it.
+  if (o.edge === 'left' || o.edge === 'top' || o.edge === 'bottom') {
+    const band = Math.min((o.edge === 'left' ? 0.14 : 0.08) * h, (10 * Math.min(canvas.width, canvas.height)) / 1080);
     ctx.save();
     ctx.clip();
     ctx.fillStyle = o.edgeColor || o.accent;
     if (o.edge === 'top') ctx.fillRect(x, y, w, band);
+    else if (o.edge === 'bottom') ctx.fillRect(x, y + h - band, w, band);
     else ctx.fillRect(x, y, band, h);
     ctx.restore();
   }
@@ -2505,9 +2530,11 @@ function renderLookPick() {
     b.type = 'button';
     b.className = `look-${key}`;
     b.setAttribute('aria-pressed', state.brand.look === key);
-    const swatch = Object.assign(document.createElement('b'), { textContent: key === 'ice' ? 'Goal' : 'GOAL' });
-    const ink = key === 'ice' ? look.brand.dark : key === 'jumbotron' ? look.brand.accent : look.brand.light;
-    Object.assign(swatch.style, { fontFamily: `"${look.kinds.stamp.font || look.brand.head}"`, background: key === 'ice' ? look.brand.light : look.brand.dark, color: ink, borderColor: look.brand.extra });
+    // Ice and Spare Line Change are dark type on light panels; the rest are light on dark.
+    const light = look.all.bg === '$light';
+    const swatch = Object.assign(document.createElement('b'), { textContent: light ? 'Goal' : 'GOAL' });
+    const ink = light ? look.brand.dark : key === 'jumbotron' ? look.brand.accent : look.brand.light;
+    Object.assign(swatch.style, { fontFamily: `"${look.kinds.stamp.font || look.brand.head}"`, background: light ? look.brand.light : look.brand.dark, color: ink, borderColor: look.brand.extra });
     b.append(swatch, Object.assign(document.createElement('span'), { textContent: look.name }), Object.assign(document.createElement('small'), { textContent: look.hint }));
     b.onclick = () => applyLook(key);
     return b;
