@@ -3293,21 +3293,29 @@ function lockCaptionOptions(on) {
 }
 
 // A video's sound between two times, as 16 kHz mono, the way Whisper wants it.
+// Each decoded piece is mixed down and shrunk to 16 kHz as soon as it arrives, so only the small
+// result stays in memory. (Handing every piece to an OfflineAudioContext kept the whole soundtrack
+// at full quality in memory until the end, which ran phones and long videos out of memory.)
 async function speechAudio(file, from, to) {
   const input = new MB.Input({ formats: MB.ALL_FORMATS, source: new MB.BlobSource(file) });
   try {
     const track = await input.getPrimaryAudioTrack();
     if (!track || !(await track.canDecode())) return null;
-    const rate = 16000, mix = new OfflineAudioContext(1, Math.max(1, Math.ceil((to - from) * rate)), rate);
-    for await (const part of new MB.AudioBufferSink(track).buffers(from, to)) {
-      const src = mix.createBufferSource();
-      src.buffer = part.buffer;
-      src.connect(mix.destination);
-      const at = part.timestamp - from;
-      if (at >= 0) src.start(at);
-      else src.start(0, -at);
+    const rate = 16000, out = new Float32Array(Math.max(1, Math.ceil((to - from) * rate)));
+    for await (const { buffer, timestamp } of new MB.AudioBufferSink(track).buffers(from, to)) {
+      const sr = buffer.sampleRate, n = buffer.length, at = timestamp - from;
+      const chans = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+      const step = sr / rate;
+      const first = Math.max(0, Math.ceil(at * rate)), last = Math.min(out.length, Math.ceil((at + n / sr) * rate));
+      // Each 16 kHz sample is the average of the source samples it covers, across all channels.
+      for (let i = first; i < last; i++) {
+        const a = clamp(Math.floor((i / rate - at) * sr), 0, n - 1), b = Math.min(n, Math.max(a + 1, Math.floor(a + step)));
+        let sum = 0;
+        for (const ch of chans) for (let j = a; j < b; j++) sum += ch[j];
+        out[i] = sum / ((b - a) * chans.length);
+      }
     }
-    return (await mix.startRendering()).getChannelData(0);
+    return out;
   } finally {
     input.dispose();
   }
