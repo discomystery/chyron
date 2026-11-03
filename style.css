@@ -856,6 +856,8 @@ video.src { position: fixed; left: -10px; top: -10px; width: 2px; height: 2px; o
 /* Fingers need bigger handles than a mouse pointer. */
 @media (pointer: coarse) {
   button, summary { touch-action: manipulation; }
+  /* Phone browsers (iOS Safari above all) zoom the whole page in when a text field under 16px gets focus. */
+  select, textarea, input:not([type="range"], [type="checkbox"], [type="color"], [type="file"]) { font-size: 16px !important; }
   .row { --rh: 38px; }
   .row.video { --rh: 42px; }
   .clip::before, .clip::after, .vclip::before, .vclip::after { width: 18px; opacity: 1; }
