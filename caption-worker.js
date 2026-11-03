@@ -18,6 +18,7 @@ async function hasWebGPU() {
 }
 
 // English-only Whisper models, in order of preference; the second is the same model from an older export.
+// (The older export can time single words, but takes about twice the memory, too much for phones.)
 const MODELS = {
   fast: ['onnx-community/whisper-base.en', 'Xenova/whisper-base.en'],
   accurate: ['onnx-community/whisper-small.en', 'Xenova/whisper-small.en'],
@@ -33,11 +34,11 @@ async function gpuFeatures() {
   }
 }
 
-async function loadAny(quality) {
+async function loadAny(quality, light) {
   let last;
   for (const model of MODELS[quality] || MODELS.accurate) {
     try {
-      return await load(model);
+      return await load(model, light);
     } catch (err) {
       last = err;
       console.warn(`Could not load ${model}:`, err);
@@ -46,8 +47,10 @@ async function loadAny(quality) {
   throw last;
 }
 
-async function load(model) {
-  const gpu = await gpuFeatures();
+// `light` (iPhone and iPad) skips the graphics chip: its half-precision encoder and 4-bit decoder take more
+// memory than the 8-bit processor version, and Safari closes a page that uses too much.
+async function load(model, light) {
+  const gpu = light ? null : await gpuFeatures();
   const key = `${model}|${!!gpu}`;
   if (asr && loadedKey === key) return;
   asr = null;
@@ -78,9 +81,9 @@ async function load(model) {
 }
 
 self.onmessage = async ({ data }) => {
-  const { audio, quality } = data;
+  const { audio, quality, light } = data;
   try {
-    await loadAny(quality);
+    await loadAny(quality, light);
     postMessage({ type: 'listening' });
     // English-only models take no language or task settings.
     const options = { chunk_length_s: 30, stride_length_s: 5 };

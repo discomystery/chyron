@@ -3165,10 +3165,16 @@ function tick(ts) {
 // Speech becomes captions on this device: each video's audio is decoded here, Whisper runs in a worker,
 // and the timed words become a captions layer that follows its footage like uploaded subtitles.
 const captionDlg = $('#captionDlg');
-let captionPrefs = { quality: 'accurate', look: 'lines', words: 6 };
+// iPhones and iPads (every browser there runs on Safari's engine) close a page that uses much more than a
+// gigabyte or so. The Accurate model needs about that much, so there Fast is the default and the model
+// runs in its lighter form (see caption-worker.js).
+const lightDevice = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+let captionPrefs = { quality: lightDevice ? 'fast' : 'accurate', look: 'lines', words: 6 };
 try {
   const kept = JSON.parse(localStorage.getItem('chyron-captions') || '{}');
-  captionPrefs = { ...captionPrefs, look: kept.look || captionPrefs.look, words: kept.words || captionPrefs.words, quality: kept.v2 ? kept.quality : 'accurate' };
+  // A quality kept before v3 was the old default on iPhones too, so it gives way to the new one there.
+  const keepQuality = kept.v3 || (kept.v2 && !lightDevice);
+  captionPrefs = { ...captionPrefs, look: kept.look || captionPrefs.look, words: kept.words || captionPrefs.words, quality: keepQuality ? kept.quality : captionPrefs.quality };
 } catch {}
 let captionWorker = null;
 let captioning = false;
@@ -3183,7 +3189,7 @@ function showCaptionPrefs() {
 }
 function keepCaptionPrefs() {
   try {
-    localStorage.setItem('chyron-captions', JSON.stringify({ ...captionPrefs, v2: true }));
+    localStorage.setItem('chyron-captions', JSON.stringify({ ...captionPrefs, v2: true, v3: true }));
   } catch {}
 }
 for (const [id, k] of [['#capQuality', 'quality'], ['#capLook', 'look']]) {
@@ -3332,7 +3338,7 @@ function transcribe(audio, onMessage) {
     };
     // A worker that fails to start usually couldn't fetch the speech library.
     captionWorker.onerror = (e) => reject(new Error(e.message || 'Failed to load the speech library'));
-    captionWorker.postMessage({ audio, quality: captionPrefs.quality }, [audio.buffer]);
+    captionWorker.postMessage({ audio, quality: captionPrefs.quality, light: lightDevice }, [audio.buffer]);
   });
 }
 
