@@ -34,4 +34,6 @@ Everything runs in your browser. Videos are never uploaded anywhere.
 
 **Follow the speaker:** for guests streamed in side by side, select the clip and click **Follow the speaker** (under Framing). Chyron looks through the clip on your device, finds the boxes, works out from moment to moment whose box is moving in step with the speech, and replaces the clip's framing with keyframes that zoom into that box and glide between speakers. It holds through short pauses, goes back to the whole picture when it can't tell, and treats each camera cut separately. Nothing is downloaded or uploaded. The keyframes are ordinary ones, so drag the video at any of them to adjust, switch one to Jump for a hard cut, or Undo to put the old framing back. The zoom is worked out for the shape you're in when you click it.
 
+**Version:** the version number sits under the Chyron wordmark. After an update, check it to be sure the new version has loaded (GitHub Pages can take a few minutes to publish). If it says *updating*, reload once more.
+
 Video export uses [Mediabunny](https://mediabunny.dev) (MPL-2.0), included unmodified in `vendor/`. Auto captions use [transformers.js](https://github.com/huggingface/transformers.js) (Apache-2.0, with ONNX Runtime Web, MIT), loaded from jsDelivr, and the MIT-licensed Whisper models. Icons are from [Phosphor](https://phosphoricons.com) (MIT).

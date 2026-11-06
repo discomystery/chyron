@@ -1,4 +1,6 @@
 const $ = (s) => document.querySelector(s);
+// Shown under the wordmark. Bump it here and in index.html (#version) with every change that ships.
+const VERSION = '1.7';
 const canvas = $('#stage');
 const ctx = canvas.getContext('2d');
 const bgCanvas = document.createElement('canvas');
@@ -3953,3 +3955,13 @@ for (const f of FONTS) {
   document.fonts.load(`${f.weight} 40px "${f.name}"`);
 }
 load().then(() => requestAnimationFrame(tick));
+
+// If the page and the script are from different releases, part of an update hasn't arrived yet.
+{
+  const v = $('#version');
+  if (v.dataset.version !== VERSION) {
+    v.textContent = `v${VERSION} · updating`;
+    v.classList.add('stale');
+    v.title = `The page is v${v.dataset.version} and the app is v${VERSION}. Reload to finish updating.`;
+  }
+}
