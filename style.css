@@ -98,7 +98,9 @@ input[type="checkbox"] { accent-color: var(--signal); width: 16px; height: 16px;
 /* On a computer the More group is invisible and its controls sit in the bar in this order. */
 .more { display: contents; }
 .bar .pair { order: 1; }
-.more > .inline, .more > .spacer, #install, #still, #export { order: 2; }
+.more > .inline, #backdropMenu, .more > .spacer, #install, #still, #export { order: 2; }
+.backdrop-opts label { display: grid; grid-template-columns: 56px 150px; align-items: center; gap: 10px; padding: 6px 8px; color: var(--muted); font-size: 13px; }
+.more .backdrop-opts label { grid-template-columns: 56px minmax(0, 1fr); }
 #moreBtn, .rail, .sheet-close { display: none; }
 .bar .lead { border-color: #46527a; }
 .pair { display: inline-flex; }

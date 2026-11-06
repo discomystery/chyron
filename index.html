@@ -44,9 +44,17 @@
     <label class="inline"><span class="lab">Video</span>
       <select id="fit">
         <option value="cover">Fill the frame</option>
+        <option value="blur">Blurred background</option>
         <option value="contain">Fit inside</option>
       </select>
     </label>
+    <details class="menu" id="backdropMenu" hidden>
+      <summary title="How the background looks behind a video that isn't this shape">Background<svg class="ic" aria-hidden="true"><use href="#i-caret"/></svg></summary>
+      <div class="backdrop-opts">
+        <label><span>Blur</span><input id="backdrop-blur" type="range" min="0" max="1" step="0.05" aria-label="Background blur"></label>
+        <label><span>Darken</span><input id="backdrop-dim" type="range" min="0" max="0.9" step="0.05" aria-label="Background darkening"></label>
+      </div>
+    </details>
     <label class="inline" title="Shade where each app's buttons and captions cover a vertical video"><span class="lab">Safe zones</span>
       <select id="safeZones">
         <option value="">No safe zones</option>
