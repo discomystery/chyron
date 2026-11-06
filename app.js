@@ -1,6 +1,6 @@
 const $ = (s) => document.querySelector(s);
 // Shown under the wordmark. Bump it here and in index.html (#version) with every change that ships.
-const VERSION = '1.7';
+const VERSION = '1.8';
 const canvas = $('#stage');
 const ctx = canvas.getContext('2d');
 const bgCanvas = document.createElement('canvas');
@@ -1181,27 +1181,30 @@ const baseScale = (sw, sh) => (state.fit === 'cover' ? Math.max : Math.min)(canv
 // copy of itself zoomed to fill the frame, blurred and darkened. A clip already the frame's shape fills it as usual.
 const sameShape = (sw, sh) => Math.abs((sw / sh) / (canvas.width / canvas.height) - 1) < 0.02;
 
-let backdropCanvas;
+let backdropCanvas, backdropRow;
 function drawBackdrop(c, sw, sh, draw) {
   const W = canvas.width, H = canvas.height, { blur, dim } = state.backdrop;
   const r = blur * 0.08 * Math.min(W, H); // blur radius in frame pixels: about 50px on a 1080-wide frame by default
-  const filters = 'filter' in c;
   // Blur a small copy and stretch it back: far cheaper than blurring the whole frame, and softer still.
-  // Browsers without canvas filters (older Safari) get the blur from the shrinking alone.
-  const s = r < 1 ? 1 : filters ? 8 : Math.max(4, r / 2);
+  // The blur is done by hand rather than with a canvas filter, which Safari on iPhone doesn't reliably apply.
+  const s = r < 1 ? 1 : 8;
   const bw = Math.max(1, Math.round(W / s)), bh = Math.max(1, Math.round(H / s));
   backdropCanvas = backdropCanvas || document.createElement('canvas');
   if (backdropCanvas.width !== bw || backdropCanvas.height !== bh) {
     backdropCanvas.width = bw;
     backdropCanvas.height = bh;
   }
-  const g = backdropCanvas.getContext('2d');
-  // Zoomed a touch past the edges, so the blur doesn't soften into empty space at the sides.
-  const m = filters ? (r / s) * 2 : 0;
-  const k = Math.max((bw + 2 * m) / sw, (bh + 2 * m) / sh), w = sw * k, h = sh * k;
-  if (filters && r >= 1) g.filter = `blur(${r / s}px)`;
+  const g = backdropCanvas.getContext('2d', { willReadFrequently: true });
+  const k = Math.max(bw / sw, bh / sh), w = sw * k, h = sh * k;
+  g.imageSmoothingEnabled = true;
+  g.imageSmoothingQuality = 'high';
   draw(g, (bw - w) / 2, (bh - h) / 2, w, h);
-  if (filters) g.filter = 'none';
+  const br = Math.round(r / s);
+  if (br >= 1) {
+    const img = g.getImageData(0, 0, bw, bh);
+    blurPixels(img.data, bw, bh, br);
+    g.putImageData(img, 0, 0);
+  }
   c.imageSmoothingEnabled = true;
   c.imageSmoothingQuality = 'high';
   c.drawImage(backdropCanvas, 0, 0, W, H);
@@ -1209,6 +1212,31 @@ function drawBackdrop(c, sw, sh, draw) {
     c.fillStyle = `rgba(0,0,0,${dim})`;
     c.fillRect(0, 0, W, H);
   }
+}
+
+// Three box blurs across and down, which together look like a Gaussian blur of radius r.
+// Pixels past the edges count as the edge pixel, so the picture doesn't darken at the sides.
+function blurPixels(px, w, h, r) {
+  const n = Math.max(w, h);
+  if (!backdropRow || backdropRow.length < n * 4) backdropRow = new Float32Array(n * 4);
+  const row = backdropRow, box = Math.max(1, Math.round(r / 1.7));
+  const pass = (start, step, len) => {
+    for (let i = 0; i < len; i++) for (let ch = 0; ch < 3; ch++) row[i * 4 + ch] = px[start + i * step + ch];
+    for (let ch = 0; ch < 3; ch++) {
+      const at = (i) => row[clamp(i, 0, len - 1) * 4 + ch];
+      let sum = 0;
+      for (let i = -box; i <= box; i++) sum += at(i);
+      for (let i = 0; i < len; i++) {
+        px[start + i * step + ch] = sum / (2 * box + 1);
+        sum += at(i + box + 1) - at(i - box);
+      }
+    }
+  };
+  for (let p = 0; p < 3; p++) {
+    for (let y = 0; y < h; y++) pass(y * w * 4, 4, w);
+    for (let x = 0; x < w; x++) pass(x * 4, w * 4, h);
+  }
+  for (let i = 3; i < px.length; i += 4) px[i] = 255;
 }
 
 // Keeps the focus point where the picture still covers the frame, so no black edges appear.
