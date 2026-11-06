@@ -16,6 +16,8 @@ const FONTS = [
   { name: 'Space Mono', weight: 700 },
 ];
 const DEFAULT_BRAND = { dark: '#111111', light: '#ffffff', main: '#1740e0', accent: '#ffd400', extra: '#e4262c', head: 'Inter Tight', body: 'Space Mono', logo: null, v: 2 };
+// How the blurred background behind a clip of another shape looks: blur 0-1, darkening 0-1.
+const DEFAULT_BACKDROP = { blur: 0.6, dim: 0.45 };
 // Values starting with $ are filled in from the brand kit when a graphic is made.
 const BASE = {
   text: '', sub: '', width: 0.84, x: 0.08, y: 0.5, size: 56, align: 'left', upper: false, track: 0,
@@ -48,7 +50,7 @@ function upgradeCover(o) {
   return o;
 }
 
-let state = { format: '9:16', fit: 'cover', clips: [], overlays: [], brand: { ...DEFAULT_BRAND }, styles: [], layouts: [], fonts: [], assets: {} };
+let state = { format: '9:16', fit: 'blur', backdrop: { ...DEFAULT_BACKDROP }, clips: [], overlays: [], brand: { ...DEFAULT_BRAND }, styles: [], layouts: [], fonts: [], assets: {} };
 let selectedId = null;
 let selectedClipId = null;
 let nextId = 1;
@@ -253,7 +255,11 @@ function stepHistory(dir) {
 }
 
 function normalise(s) {
-  const out = { format: '9:16', fit: 'cover', clips: [], overlays: [], styles: [], layouts: [], fonts: [], assets: {}, ...s };
+  const out = { format: '9:16', fit: 'blur', clips: [], overlays: [], styles: [], layouts: [], fonts: [], assets: {}, ...s };
+  out.backdrop = { ...DEFAULT_BACKDROP, ...s.backdrop };
+  // Projects from before the blurred background filled the frame by default; they move to it once.
+  if (!(s.fitV >= 2) && out.fit === 'cover') out.fit = 'blur';
+  out.fitV = 2;
   out.brand = { ...DEFAULT_BRAND, ...s.brand };
   // Projects from before the marker look still on the old default typefaces move to the new ones.
   if (!(s.brand && s.brand.v >= 2)) {
@@ -278,6 +284,7 @@ function applyState() {
   setFormat(state.format);
   $('#format').value = state.format;
   $('#fit').value = state.fit;
+  showBackdropOptions();
   recalc();
   renderFontOptions();
   renderLooks();
@@ -1168,6 +1175,40 @@ function framingAt(c, t) {
 
 const baseScale = (sw, sh) => (state.fit === 'cover' ? Math.max : Math.min)(canvas.width / sw, canvas.height / sh);
 
+// With a blurred background, a clip that isn't the frame's shape sits whole across the middle, over a
+// copy of itself zoomed to fill the frame, blurred and darkened. A clip already the frame's shape fills it as usual.
+const sameShape = (sw, sh) => Math.abs((sw / sh) / (canvas.width / canvas.height) - 1) < 0.02;
+
+let backdropCanvas;
+function drawBackdrop(c, sw, sh, draw) {
+  const W = canvas.width, H = canvas.height, { blur, dim } = state.backdrop;
+  const r = blur * 0.08 * Math.min(W, H); // blur radius in frame pixels: about 50px on a 1080-wide frame by default
+  const filters = 'filter' in c;
+  // Blur a small copy and stretch it back: far cheaper than blurring the whole frame, and softer still.
+  // Browsers without canvas filters (older Safari) get the blur from the shrinking alone.
+  const s = r < 1 ? 1 : filters ? 8 : Math.max(4, r / 2);
+  const bw = Math.max(1, Math.round(W / s)), bh = Math.max(1, Math.round(H / s));
+  backdropCanvas = backdropCanvas || document.createElement('canvas');
+  if (backdropCanvas.width !== bw || backdropCanvas.height !== bh) {
+    backdropCanvas.width = bw;
+    backdropCanvas.height = bh;
+  }
+  const g = backdropCanvas.getContext('2d');
+  // Zoomed a touch past the edges, so the blur doesn't soften into empty space at the sides.
+  const m = filters ? (r / s) * 2 : 0;
+  const k = Math.max((bw + 2 * m) / sw, (bh + 2 * m) / sh), w = sw * k, h = sh * k;
+  if (filters && r >= 1) g.filter = `blur(${r / s}px)`;
+  draw(g, (bw - w) / 2, (bh - h) / 2, w, h);
+  if (filters) g.filter = 'none';
+  c.imageSmoothingEnabled = true;
+  c.imageSmoothingQuality = 'high';
+  c.drawImage(backdropCanvas, 0, 0, W, H);
+  if (dim > 0) {
+    c.fillStyle = `rgba(0,0,0,${dim})`;
+    c.fillRect(0, 0, W, H);
+  }
+}
+
 // Keeps the focus point where the picture still covers the frame, so no black edges appear.
 function keepInFrame(f, sw, sh) {
   const W = canvas.width, H = canvas.height, k = baseScale(sw, sh) * f.zoom;
@@ -1185,11 +1226,13 @@ function coverRect(sw, sh, f = NO_FRAMING) {
   return { x, y, w, h };
 }
 
+// `draw(g, x, y, w, h)` paints the video frame onto context `g` at that spot.
 function drawCover(c, sw, sh, draw, f = NO_FRAMING) {
   const { x, y, w, h } = coverRect(sw, sh, f);
   c.fillStyle = '#000';
   c.fillRect(0, 0, canvas.width, canvas.height);
-  draw(x, y, w, h);
+  if (state.fit === 'blur' && !sameShape(sw, sh)) drawBackdrop(c, sw, sh, draw);
+  draw(c, x, y, w, h);
 }
 
 let shownVideo = null;
@@ -1220,7 +1263,7 @@ function refreshBackground() {
     const el = s.m.el;
     if (el.readyState >= 2 && el.videoWidth) {
       const f = framingAt(s.c, el.currentTime);
-      drawCover(bgCtx, el.videoWidth, el.videoHeight, (x, y, w, h) => bgCtx.drawImage(el, x, y, w, h), f);
+      drawCover(bgCtx, el.videoWidth, el.videoHeight, (g, x, y, w, h) => g.drawImage(el, x, y, w, h), f);
       shownVideo = { el, rect: coverRect(el.videoWidth, el.videoHeight, f) };
     }
   } else {
@@ -2741,7 +2784,7 @@ async function exportFast() {
         T = n / fps;
         const f = framingAt(s.c, times[n - first]);
         drawFrame(T, true, () => {
-          if (sample) drawCover(ctx, sample.displayWidth, sample.displayHeight, (x, y, w, h) => sample.draw(ctx, x, y, w, h), f);
+          if (sample) drawCover(ctx, sample.displayWidth, sample.displayHeight, (g, x, y, w, h) => sample.draw(g, x, y, w, h), f);
         });
         if (sample) sample.close();
         await videoOut.add(T, 1 / fps);
@@ -3005,7 +3048,7 @@ async function coverThumbs() {
         if (sample) {
           const g = cells[i].getContext('2d');
           g.setTransform(k, 0, 0, k, 0, 0);
-          drawCover(g, sample.displayWidth, sample.displayHeight, (x, y, w, h) => sample.draw(g, x, y, w, h), framingAt(s.c, src[j]));
+          drawCover(g, sample.displayWidth, sample.displayHeight, (d, x, y, w, h) => sample.draw(d, x, y, w, h), framingAt(s.c, src[j]));
           sample.close();
         }
         j++;
@@ -3065,11 +3108,30 @@ $('#format').onchange = (e) => {
 };
 $('#fit').onchange = (e) => {
   state.fit = e.target.value;
+  showBackdropOptions();
   save();
 };
+// The blurred background's own settings only show while it's chosen.
+function showBackdropOptions() {
+  const menu = $('#backdropMenu');
+  menu.hidden = state.fit !== 'blur';
+  if (menu.hidden) menu.open = false;
+  for (const k of ['blur', 'dim']) {
+    const input = $(`#backdrop-${k}`);
+    if (input !== document.activeElement) input.value = state.backdrop[k];
+  }
+}
+for (const k of ['blur', 'dim']) {
+  $(`#backdrop-${k}`).oninput = (e) => {
+    state.backdrop[k] = +e.target.value;
+    save();
+  };
+}
 addEventListener('click', (e) => {
   const menu = $('#projectMenu');
   if (menu.open && (!menu.contains(e.target) || e.target.closest('.menu button'))) menu.open = false;
+  const backdrop = $('#backdropMenu');
+  if (backdrop.open && !backdrop.contains(e.target)) backdrop.open = false;
 });
 
 addEventListener('keydown', (e) => {

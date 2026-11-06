@@ -10,6 +10,8 @@ Everything runs in your browser. Videos are never uploaded anywhere.
 
 **On a phone:** the same site switches to a phone layout. The video sits on top with tool rails either side of it (graphics to add on the left, actions for the selected graphic or clip on the right), then the timeline, then the editing panel, with icon tabs along the bottom for Text, Style, Color and Timing. After export, **Save or share** opens the share sheet so the video can go straight to Photos.
 
+**Videos of another shape:** a clip that isn't the shape you're making (a wide 16:9 clip in a vertical video, say) sits whole across the middle, over a copy of itself zoomed to fill the frame, blurred and darkened, like news clips on social. Clips already the right shape fill the frame as usual. Change it under Video (Fill the frame crops instead, Fit inside leaves black bars), and set how blurred and how dark the background is under Background.
+
 **Covers:** add a Cover to hide part of the video, such as another channel's on-screen titles. It can be a solid color or a blur of whatever is underneath, and either can have soft edges, on all sides or just one (a solid cover softened on one side works as a gradient). Drag it into place and resize it from the right and bottom edges (or set width and height as percentages). Like other graphics it fades in and out, and its timing follows its bar in the timeline.
 
 **Subtitles:** add an SRT or VTT file and the lines follow the video they were made for, so they stay in sync when you trim, split or reorder clips. For subtitles made from the finished edit, set them to follow the timeline instead.
